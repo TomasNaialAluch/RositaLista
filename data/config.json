@@ -2,9 +2,10 @@
   "whatsappNumber": "5491166246009",
   "ventaMinimaKg": 8,
   "barrios": [
-    { "nombre": "Mataderos", "costoEnvio": 0 },
-    { "nombre": "Liniers", "costoEnvio": 1500 },
-    { "nombre": "Floresta", "costoEnvio": 2000 }
+    { "nombre": "Savedra", "costoEnvio": 3000 },
+    { "nombre": "Nuñez", "costoEnvio": 5000 },
+    { "nombre": "Belgrano", "costoEnvio": 8000 },
+    { "nombre": "Palermo", "costoEnvio": 8000 }
   ],
   "quienesSomos": {
     "titulo": "Tradición familiar, calidad generación tras generación.",

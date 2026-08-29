@@ -66,6 +66,11 @@ main {
   margin: 0;
 }
 
+.catalog-toolbar > .ca-toggle-btn {
+  grid-column: 3;
+  justify-self: end;
+}
+
 /* #catalog vive fuera de <main> (ver js/app.js) para quedar después de
    .catalog-toolbar en el orden visual, pero necesita el mismo max-width
    centrado que <main> para que las categorías no queden pegadas a los

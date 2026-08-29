@@ -8,6 +8,7 @@
   let navEl = null;
   let view = "grid"; // 'grid' | 'list' — grid es el default
   let allCollapsed = false;
+  let asadoActive = false; // ver CalcularAsado — reordena las categorías mientras dura el modo
 
   const catalogEl = document.createElement("section");
   catalogEl.id = "catalog";
@@ -22,8 +23,9 @@
   function renderCatalog() {
     catalogEl.innerHTML = "";
     const renderer = view === "list" ? ProductList : Cards;
-    Object.entries(PRODUCTS).forEach(([catKey, cat]) => {
-      const section = renderer.createCategorySection(catKey, cat, {
+    const order = asadoActive ? CalcularAsado.reorderForAsado(Object.keys(PRODUCTS)) : Object.keys(PRODUCTS);
+    order.forEach((catKey) => {
+      const section = renderer.createCategorySection(catKey, PRODUCTS[catKey], {
         onIncrement: Cart.increment,
         onDecrement: Cart.decrement,
       });
@@ -35,6 +37,7 @@
   function goToCategory(catKey) {
     const target = document.getElementById(`cat-${catKey}`);
     if (target) {
+      target.classList.remove("category-section--collapsed");
       window.scrollTo({ top: target.offsetTop - 16, behavior: "smooth" });
     }
   }
@@ -72,6 +75,19 @@
       ViewToggle.create((newView) => {
         view = newView;
         renderCatalog();
+      })
+    );
+    toolbar.appendChild(
+      CalcularAsado.create(PRODUCTS, {
+        onEnter: () => {
+          asadoActive = true;
+          renderCatalog();
+        },
+        onExit: () => {
+          asadoActive = false;
+          renderCatalog();
+        },
+        goToCategory,
       })
     );
     document.body.appendChild(toolbar);

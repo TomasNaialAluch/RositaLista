@@ -27,6 +27,7 @@ const Cart = (function () {
   let onVisibilityChange = null;
   let els = {}; // referencias a los elementos creados por buildDOM()
   let editingTicketId = null; // qué chip de "Mis pedidos" está en modo renombrar, si alguno
+  const subscribers = []; // ver Cart.subscribe — CalcularAsado lo usa para refrescar su contador flotante
 
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
@@ -42,6 +43,7 @@ const Cart = (function () {
     renderGrandTotal();
     updateBarChip();
     updateWhatsAppLink();
+    subscribers.forEach((fn) => fn());
   }
 
   function updateBarChip() {
@@ -477,6 +479,28 @@ const Cart = (function () {
       const qty = CartState.changeQty(catKey, item, mode, -1, preparacion);
       updateUI();
       return qty;
+    },
+    /**
+     * Refresca toda la UI del carrito (barra + modal) sin cambiar cantidades.
+     * Hace falta cuando algo externo mueve el estado directamente en
+     * CartState (ej: CalcularAsado creando/renombrando un ticket) en vez de
+     * pasar por increment/decrement.
+     */
+    refresh: updateUI,
+    /** Abre el modal del pedido (mismo efecto que tocar "Ver pedido"). */
+    openModal: () => els.cartModal.classList.remove("hidden"),
+    /**
+     * Se llama cada vez que cambia algo del carrito (agregar/sacar
+     * productos, crear/borrar/renombrar tickets). Devuelve una función para
+     * desuscribirse. Pensado para CalcularAsado, que necesita saber en vivo
+     * cuánta carne lleva sumada el ticket que está armando.
+     */
+    subscribe: (fn) => {
+      subscribers.push(fn);
+      return () => {
+        const idx = subscribers.indexOf(fn);
+        if (idx !== -1) subscribers.splice(idx, 1);
+      };
     },
   };
 })();
