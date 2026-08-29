@@ -15,24 +15,35 @@ La idea es bajar la fricción entre "ver la lista" y "hacer el pedido", sin nece
 
 ## Estructura del proyecto
 
+`index.html` no tiene markup propio — es un shell que solo importa scripts. Cada pedazo de la página es un componente en `js/components/` que crea su propio DOM y su propio `<style>` al montarse; `js/app.js` es la raíz que arma todo el árbol, parecido a como un root component monta una app React.
+
 ```
-├── index.html                    # Estructura de la página, engancha todo lo demás
+├── index.html                    # Shell: solo <head> + <script> tags, sin markup propio
 │
 ├── data/
 │   └── products.json             # LOS DATOS — nuestra "API": precios, categorías, WhatsApp
 │
 ├── css/
-│   └── styles.css                # Estilos generales de la página (layout, carrito, footer)
+│   └── styles.css                # Solo lo genuinamente COMPARTIDO: variables, reset, layout de categoría
 │
 ├── js/
-│   ├── app.js                    # ORQUESTADOR: fetch de products.json, arma catálogo y nav, monta el carrito
-│   ├── pricing.js                # Cálculo de precios (por kilo / por unidad), compartido por cards y cart
-│   ├── preparation.js            # Opciones de preparación (ej: "Para milanesa") — datos + helpers, usado por cards.js y cart.js
+│   ├── app.js                    # RAÍZ: fetch de products.json, monta todos los componentes en orden
+│   ├── pricing.js                # Cálculo de precios (por kilo / por unidad) — no es componente, no toca el DOM
+│   ├── preparation.js            # Opciones de preparación (ej: "Para milanesa") — tampoco toca el DOM
 │   └── components/
-│       ├── cart.js               # Componente: estado del carrito, barra/modal de pedido, WhatsApp (autocontenido, su propio CSS)
-│       ├── cards.js              # Componente: grilla de cards de producto (autocontenido, su propio CSS)
-│       ├── nav.js                # Componente: barra de navegación flotante (autocontenido, su propio CSS)
-│       └── icons.js              # Íconos SVG minimalistas de animales, usados por cards y nav
+│       ├── icons.js              # Íconos SVG minimalistas, compartido por catalog/ y nav/
+│       ├── chrome/                # Piezas de "cáscara" de la página (no dependen del catálogo)
+│       │   ├── header.js         # Logo + tagline
+│       │   ├── intro.js          # Título + bajada
+│       │   ├── viewToggle.js     # Botones Grid/Lista — administra su propio estado "activo"
+│       │   └── footer.js         # Pie con el link de WhatsApp (recibe el número por parámetro)
+│       ├── catalog/               # Las dos formas de mostrar los productos
+│       │   ├── cards.js          # Vista en grilla (2-4 columnas según ancho)
+│       │   └── productList.js    # Vista en lista (filas de ancho completo, más compacta)
+│       ├── nav/
+│       │   └── nav.js            # Barra de navegación flotante por categoría (paginada en mobile)
+│       └── cart/
+│           └── cart.js           # Estado del carrito, barra/modal de pedido, mensaje de WhatsApp
 │
 ├── assets/
 │   └── logo.png                  # Logo de Rosita
@@ -43,10 +54,12 @@ La idea es bajar la fricción entre "ver la lista" y "hacer el pedido", sin nece
 ### Por qué está organizado así
 
 - **`data/`** es la única fuente de verdad de precios y categorías — pensala como la "API" del sitio, aunque sea un archivo estático. `js/app.js` la lee con `fetch()` al cargar la página.
-- **`js/components/`** son piezas de UI autocontenidas: cada una (`cart.js`, `cards.js`, `nav.js`) inyecta su propio `<style>` y crea su propio DOM — no dependen de markup puesto en `index.html` ni de reglas sueltas en `css/styles.css`. Si tenés que tocar cómo se ve o se comporta el carrito, la nav o las cards, el archivo que buscás está ahí adentro — no hay estilos ni HTML escondidos en otro lado.
-- **`js/components/cart.js`** es el único que mantiene el estado del pedido (qué hay en el carrito, cantidades, total) y el único que sabe armar el mensaje de WhatsApp. No sabe nada de cómo se dibuja una card — solo expone `Cart.increment` / `Cart.decrement`, con la misma firma que esperan los handlers de `Cards`, y `Cart.init()` para montarse en la página.
-- **`js/app.js`** es puro orquestador: no tiene estado propio. Trae los datos, crea la nav (`Nav`), monta el carrito (`Cart.init`) y renderiza el catálogo (`Cards`) pasándole `Cart.increment`/`Cart.decrement` como callbacks.
-- **`css/styles.css`** solo tiene estilos de layout general (header, intro, footer) — todo lo que es específico de un componente vive con ese componente.
+- **Cada componente es un archivo autocontenido**: inyecta su propio `<style>` y crea su propio DOM — no depende de markup puesto en `index.html` ni de reglas sueltas en `css/styles.css`. Si tenés que tocar cómo se ve o se comporta algo, el archivo que buscás está ahí adentro, no hay estilos ni HTML escondidos en otro lado.
+- **Las carpetas dentro de `js/components/`** agrupan por feature (`chrome/`, `catalog/`, `nav/`, `cart/`), no por tipo de archivo — cada carpeta es "todo lo relacionado con esa parte de la página". Con pocos componentes esto sería exceso de estructura, pero ya hay 9 archivos y va a seguir creciendo, así que conviene tenerlo agrupado desde ahora. `icons.js` queda suelto en `js/components/` porque no es una "vista" propia, es un recurso compartido entre `catalog/` y `nav/`.
+- **`js/components/catalog/cards.js`** y **`productList.js`** son intercambiables: ambas exponen `createCategorySection(catKey, category, handlers)` con la misma firma, así que `app.js` puede usar una u otra según la vista elegida sin que el resto del código se entere.
+- **`js/components/cart/cart.js`** es el único que mantiene el estado del pedido (qué hay en el carrito, cantidades, total, datos de entrega) y el único que sabe armar el mensaje de WhatsApp. No sabe nada de cómo se dibuja una card — solo expone `Cart.increment` / `Cart.decrement`, con la misma firma que esperan los handlers de `Cards`/`ProductList`, y `Cart.init()` para montarse en la página.
+- **`js/app.js`** es puro orquestador: no tiene estado propio. Monta `Header`, `Intro`, `ViewToggle`, el catálogo, `Footer`, `Nav` y `Cart`, y conecta los callbacks entre ellos — parecido a un componente raíz de React armando el árbol.
+- **`css/styles.css`** quedó reducido a lo genuinamente compartido: variables CSS, reset, `main`, y las reglas de categoría (título colapsable) que usan tanto `cards.js` como `productList.js` — eso sí se comparte a propósito, para no duplicar la animación de abrir/cerrar en las dos vistas.
 
 ## Cómo actualizar los precios
 
