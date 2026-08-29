@@ -1,3 +1,9 @@
+/* Solo lo genuinamente compartido vive acá: variables globales, reset y
+   layout base. Cada pieza visual de la página (header, intro, view-toggle,
+   footer, nav, cart, cards/lista de producto) es un componente en
+   js/components/ que inyecta su propio <style> — ver ese archivo antes de
+   agregar una regla acá. */
+
 :root {
   --rosita-pink: #c14f6b;
   --rosita-pink-dark: #a53d57;
@@ -27,56 +33,16 @@ h1, h2 {
   font-family: 'Playfair Display', serif;
 }
 
-.site-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 28px 16px 10px;
-  text-align: center;
-}
-
-.site-header .logo {
-  width: 140px;
-  height: auto;
-  max-width: 40vw;
-}
-
-.tagline {
-  color: var(--rosita-pink-dark);
-  letter-spacing: 3px;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  margin: 4px 0 0;
-  font-weight: 600;
-}
-
 main {
   max-width: 780px;
   margin: 0 auto;
   padding: 0 16px;
 }
 
-.intro {
-  text-align: center;
-  margin: 18px 0 22px;
-}
-
-.intro h1 {
-  font-size: 2rem;
-  color: var(--rosita-pink-dark);
-  margin: 0 0 8px;
-}
-
-.intro p {
-  color: var(--text-muted);
-  font-size: 0.98rem;
-  max-width: 520px;
-  margin: 0 auto;
-  line-height: 1.5;
-}
-
-/* La barra de navegación flotante NO vive acá — nav.js inyecta su propio
-   <style> con todas sus reglas, para que sea 100% autocontenida. */
+/* Estas reglas de categoría son compartidas a propósito entre cards.js y
+   productList.js (título colapsable + animación de abrir/cerrar) — no son
+   específicas de ninguna de las dos vistas, por eso viven acá y no
+   duplicadas en cada componente. */
 
 .category-section {
   margin-bottom: 30px;
@@ -91,6 +57,53 @@ main {
   margin: 0 0 12px;
   padding-bottom: 6px;
   border-bottom: 2px solid var(--rosita-pink-light);
+  cursor: pointer;
+  user-select: none;
+}
+
+.category-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.category-chevron {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--rosita-pink-dark);
+  transition: transform 0.25s ease;
+}
+
+.category-chevron svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.category-section--collapsed .category-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Truco de CSS Grid para animar de alto natural a 0 sin medir en JS:
+   la fila pasa de 1fr a 0fr y el contenido interno (overflow:hidden)
+   se va achicando en vez de cortarse de golpe. */
+.category-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.3s ease;
+}
+
+.category-section--collapsed .category-collapse {
+  grid-template-rows: 0fr;
+}
+
+.category-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
 }
 
 .category-icon {
@@ -104,27 +117,4 @@ main {
   width: 100%;
   height: 100%;
   display: block;
-}
-
-/* Las cards de producto NO viven acá — cards.js inyecta su propio <style>
-   con todas sus reglas (mismo criterio que nav.js). */
-
-/* El carrito (barra, modal, botón flotante de WhatsApp) tampoco vive acá —
-   js/components/cart.js inyecta su propio <style> (mismo criterio). */
-
-.site-footer {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  padding: 30px 16px 20px;
-}
-
-.site-footer a {
-  color: var(--rosita-pink-dark);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.site-footer a:hover {
-  text-decoration: underline;
 }

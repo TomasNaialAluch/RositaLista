@@ -29,7 +29,7 @@
     "pollo": {
       "label": "Pollo",
       "items": [
-        { "name": "Suprema", "cut": "Cortes magros", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 10800 } } },
+        { "name": "Suprema", "cut": "Cortes magros", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 10800 } }, "opcionesPreparacion": ["Milanesa"] },
         { "name": "Churrasquito de Pollo", "cut": "Cortes magros", "min": "", "venta": { "kilo": { "precioPorKg": 9500 } } },
         { "name": "Pata / Muslo", "cut": "Cortes con hueso", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 6000 } } }
       ]

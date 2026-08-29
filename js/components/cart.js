@@ -1,7 +1,7 @@
-// Componente de carrito: estado del pedido, barra flotante, botón flotante
-// de WhatsApp y modal de detalle con el mensaje final. Autocontenido igual
-// que cards.js y nav.js — crea su propio DOM e inyecta su propio <style>,
-// no depende de markup ni reglas puestas en index.html/styles.css.
+// Componente de carrito: estado del pedido, barra flotante y modal de
+// detalle con el mensaje final. Autocontenido igual que cards.js y
+// nav.js — crea su propio DOM e inyecta su propio <style>, no depende de
+// markup ni reglas puestas en index.html/styles.css.
 //
 // No sabe nada de cómo se dibuja una card: solo expone Cart.increment /
 // Cart.decrement (mismas firmas que esperan los handlers de Cards) y
@@ -222,33 +222,6 @@ const Cart = (function () {
     .cart-btn-whatsapp:hover {
       background: var(--whatsapp-dark);
     }
-
-    .cart-floating-whatsapp {
-      position: fixed;
-      bottom: 90px;
-      right: 18px;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: var(--whatsapp);
-      color: #fff;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-      cursor: pointer;
-      z-index: 15;
-      transition: bottom 0.25s ease;
-    }
-
-    .cart-bar.visible ~ .cart-floating-whatsapp {
-      bottom: 162px;
-    }
-
-    .cart-floating-whatsapp:hover {
-      background: var(--whatsapp-dark);
-    }
   `;
 
   const WHATSAPP_ICON_SVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.001 2C6.478 2 2 6.477 2 12c0 1.876.516 3.632 1.412 5.13L2 22l4.995-1.379A9.947 9.947 0 0 0 12.001 22C17.524 22 22 17.523 22 12S17.524 2 12.001 2zm0 18.06a8.03 8.03 0 0 1-4.099-1.122l-.294-.175-3.04.84.821-2.965-.192-.304A8.03 8.03 0 0 1 3.94 12c0-4.444 3.617-8.06 8.061-8.06 4.444 0 8.06 3.616 8.06 8.06 0 4.444-3.616 8.06-8.06 8.06z"/></svg>`;
@@ -408,7 +381,7 @@ const Cart = (function () {
     return nameOk && addressOk;
   }
 
-  /** Crea el DOM del carrito (barra, modal, botón flotante) y lo agrega al body. */
+  /** Crea el DOM del carrito (barra y modal) y lo agrega al body. */
   function buildDOM() {
     const cartBar = document.createElement("div");
     cartBar.id = "cartBar";
@@ -459,20 +432,12 @@ const Cart = (function () {
       </div>
     `;
 
-    const floatingWhatsapp = document.createElement("button");
-    floatingWhatsapp.id = "floatingWhatsapp";
-    floatingWhatsapp.className = "cart-floating-whatsapp";
-    floatingWhatsapp.setAttribute("aria-label", "Contactar por WhatsApp");
-    floatingWhatsapp.innerHTML = WHATSAPP_ICON_SVG.replace("<svg ", '<svg width="28" height="28" ');
-
     document.body.appendChild(cartBar);
     document.body.appendChild(cartModal);
-    document.body.appendChild(floatingWhatsapp);
 
     els = {
       cartBar,
       cartModal,
-      floatingWhatsapp,
       cartCount: cartBar.querySelector("#cartCount"),
       cartTotal: cartBar.querySelector("#cartTotal"),
       modalTotal: cartModal.querySelector("#modalTotal"),
@@ -507,15 +472,6 @@ const Cart = (function () {
     // No deja abrir WhatsApp si falta nombre o dirección.
     els.whatsappBtn.addEventListener("click", (e) => {
       if (!validateCustomerFields()) e.preventDefault();
-    });
-
-    // Botón flotante -> contacto general si el carrito está vacío, si no abre el carrito.
-    floatingWhatsapp.addEventListener("click", () => {
-      if (getCartEntries().length === 0) {
-        window.open(`https://wa.me/${WHATSAPP_NUMBER}`, "_blank", "noopener");
-      } else {
-        cartModal.classList.remove("hidden");
-      }
     });
   }
 
