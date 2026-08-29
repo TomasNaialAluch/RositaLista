@@ -10,26 +10,33 @@ const Pricing = (function () {
   /**
    * Devuelve los modos de venta disponibles de un producto.
    * @param {object} item - producto, con item.venta = {
-   *   kilo?: { precioPorKg },
+   *   kilo?: { precioPorKg, minKg? },  // "minKg" es opcional: cantidad mínima de compra
+   *     por kilo (ej: Pechito de Cerdo y Carré de Cerdo se venden con mínimo 3 kg). Si no
+   *     se pone, el mínimo es 1 kg (comportamiento normal).
    *   unidad?: { precioPorKg, pesoAproxKg, nombre? }  // "nombre" es opcional: cómo se
    *     llama la pieza entera cuando es distinto del nombre del corte (ej: Asado del
    *     Medio se vende entero como "Ventana"). Si no se pone, no pasa nada — el modo
    *     "unidad" funciona igual, solo que sin alias.
    * }
-   * @returns {Array<{key: 'kilo'|'unidad', label: string, aliasName: string|null, unitPrice: number, unitLabel: string, detail: string}>}
+   * @returns {Array<{key: 'kilo'|'unidad', label: string, aliasName: string|null, unitPrice: number, unitLabel: string, minQty: number, detail: string}>}
    */
   function getSaleModes(item) {
     const venta = item.venta || {};
     const modes = [];
 
     if (venta.kilo) {
+      const minQty = venta.kilo.minKg || 1;
       modes.push({
         key: "kilo",
         label: "Por Kilo",
         aliasName: null,
         unitPrice: venta.kilo.precioPorKg,
         unitLabel: "kg",
-        detail: `${money(venta.kilo.precioPorKg)} / kg`,
+        minQty,
+        detail:
+          minQty > 1
+            ? `${money(venta.kilo.precioPorKg)} / kg (mín. ${minQty} kg)`
+            : `${money(venta.kilo.precioPorKg)} / kg`,
       });
     }
 
@@ -41,7 +48,8 @@ const Pricing = (function () {
         aliasName: venta.unidad.nombre || null,
         unitPrice,
         unitLabel: "unidad",
-        detail: `${money(unitPrice)} (~${venta.unidad.pesoAproxKg} kg aprox)`,
+        minQty: 1,
+        detail: `${money(venta.unidad.precioPorKg)} / kg (~${venta.unidad.pesoAproxKg} kg) = ${money(unitPrice)}`,
       });
     }
 

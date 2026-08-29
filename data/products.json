@@ -4,36 +4,51 @@
     "vacuno": {
       "label": "Vacuno",
       "items": [
-        { "name": "Asado del Medio", "cut": "Cortes con hueso", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 19900 }, "unidad": { "precioPorKg": 18500, "pesoAproxKg": 7, "nombre": "Ventana" } } },
+        { "name": "Asado del Medio", "cut": "Cortes con hueso", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 19900 }, "unidad": { "precioPorKg": 18500, "pesoAproxKg": 7, "nombre": "Ventana" } }, "opcionesPreparacion": ["Cortado a banderita", "Cortado a 3 dedos", "Cortado a 5 dedos", "Solo marcado"] },
         { "name": "Vacío", "cut": "Cortes magros", "min": "Pieza ~5 kg", "venta": { "unidad": { "precioPorKg": 19300, "pesoAproxKg": 5 }, "kilo": { "precioPorKg": 23000 } } },
-        { "name": "Peceto", "cut": "Para milanesa", "min": "Pieza ~2 kg", "venta": { "kilo": { "precioPorKg": 23000 }, "unidad": { "precioPorKg": 23000, "pesoAproxKg": 2 } }, "opcionesPreparacion": ["Para milanesa"] },
-        { "name": "Colita de Cuadril", "cut": "Cortes magros", "min": "Pieza ~1 kg", "venta": { "kilo": { "precioPorKg": 21000 } } },
-        { "name": "Nalga Feteada", "cut": "Para milanesa", "min": "", "venta": { "kilo": { "precioPorKg": 21000 } } },
-        { "name": "Bola de Lomo / Cuadrada", "cut": "Para milanesa", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 19000 } } },
-        { "name": "Roastbeef", "cut": "Cortes magros", "min": "", "venta": { "kilo": { "precioPorKg": 18000 } } },
-        { "name": "Paleta", "cut": "Cortes magros", "min": "", "venta": {} },
+        { "name": "Peceto", "cut": "Para milanesa", "min": "Pieza ~2 kg", "venta": { "unidad": { "precioPorKg": 23000, "pesoAproxKg": 2 } }, "opcionesPreparacion": ["Para milanesa"] },
+        { "name": "Colita de Cuadril", "cut": "Cortes magros", "min": "Pieza ~1 kg", "venta": { "unidad": { "precioPorKg": 21000, "pesoAproxKg": 1 } } },
+        { "name": "Nalga", "cut": "Para milanesa", "min": "", "venta": { "kilo": { "precioPorKg": 21000 }, "unidad": { "precioPorKg": 19000, "pesoAproxKg": 5 } }, "opcionesPreparacion": ["Milanesa"] },
+        { "name": "Bola de Lomo", "cut": "Para milanesa", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 19000 }, "unidad": { "precioPorKg": 17000, "pesoAproxKg": 1 } }, "opcionesPreparacion": ["Para milanesa"] },
+        { "name": "Cuadrada", "cut": "Para milanesa", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 19000 }, "unidad": { "precioPorKg": 17000, "pesoAproxKg": 1 } }, "opcionesPreparacion": ["Para milanesa"] },
+        { "name": "Roastbeef", "cut": "Cortes magros", "min": "", "venta": { "kilo": { "precioPorKg": 18000 }, "unidad": { "precioPorKg": 16500, "pesoAproxKg": 5 } }, "opcionesPreparacion": ["En churrascos", "Picada"] },
+        { "name": "Paleta", "cut": "Cortes magros", "min": "", "venta": { "kilo": { "precioPorKg": 18000 }, "unidad": { "precioPorKg": 16500, "pesoAproxKg": 5 } }, "opcionesPreparacion": ["En churrascos", "Picada"] },
         { "name": "Lomo Premium", "cut": "Cortes magros", "min": "Pieza ~2 kg", "venta": { "unidad": { "precioPorKg": 29000, "pesoAproxKg": 2 } } },
-        { "name": "Ojo de Bife s/Env", "cut": "Cortes magros", "min": "Pieza ~2 kg", "venta": { "kilo": { "precioPorKg": 26000 } } },
-        { "name": "Entraña", "cut": "Cortes magros", "min": "Pieza ~0.5 kg", "venta": { "kilo": { "precioPorKg": 29000 } } },
+        { "name": "Ojo de Bife", "cut": "Cortes magros", "min": "Pieza ~2 kg", "venta": { "unidad": { "precioPorKg": 27000, "pesoAproxKg": 2 } }, "opcionesPreparacion": ["Cortado en churrasco"] },
+        { "name": "Entraña", "cut": "Cortes magros", "min": "Pieza ~0.7 kg", "venta": { "unidad": { "precioPorKg": 29000, "pesoAproxKg": 0.7 } } },
         { "name": "Bife de Chorizo", "cut": "Cortes magros", "min": "Pieza ~4-5 kg", "venta": { "kilo": { "precioPorKg": 26000 } } },
-        { "name": "Bife Angosto / Ancho", "cut": "Cortes magros", "min": "1 kg", "venta": {} },
-        { "name": "Picañah", "cut": "Cortes magros", "min": "Pieza ~1 kg", "venta": { "kilo": { "precioPorKg": 19000 } } },
-        { "name": "Picada Roastbeef", "cut": "Picada", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 18000 } } },
+        { "name": "Bife Angosto", "cut": "Cortes magros", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 24000 } }, "opcionesPreparacion": ["En churrascos"] },
+        { "name": "Bife Ancho", "cut": "Cortes magros", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 20000 }, "unidad": { "precioPorKg": 20000, "pesoAproxKg": 3 } }, "opcionesPreparacion": ["En churrascos"] },
+        { "name": "Picaña", "cut": "Cortes magros", "min": "Pieza ~1.5 kg", "venta": { "unidad": { "precioPorKg": 19000, "pesoAproxKg": 1.5 } } },
         { "name": "Picada Especial", "cut": "Picada", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 8900 } } },
-        { "name": "Palomita", "cut": "Cortes magros", "min": "1 kg", "venta": {} },
-        { "name": "Tortuguita", "cut": "Cortes magros", "min": "1 kg", "venta": {} },
-        { "name": "Matambre", "cut": "Cortes magros", "min": "Pieza ~2.5 kg", "venta": {} }
+        { "name": "Palomita", "cut": "Cortes magros", "min": "Pieza ~1.2 kg", "venta": { "unidad": { "precioPorKg": 16000, "pesoAproxKg": 1.2 } } },
+        { "name": "Tortuguita", "cut": "Cortes magros", "min": "Pieza ~1.5 kg", "venta": { "unidad": { "precioPorKg": 16000, "pesoAproxKg": 1.5 } } },
+        { "name": "Matambre", "cut": "Cortes magros", "min": "Pieza ~2.5 kg", "venta": { "unidad": { "precioPorKg": 13900, "pesoAproxKg": 2.5 } } }
+      ]
+    },
+    "pollo": {
+      "label": "Pollo",
+      "items": [
+        { "name": "Suprema", "cut": "Cortes magros", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 10800 } } },
+        { "name": "Churrasquito de Pollo", "cut": "Cortes magros", "min": "", "venta": { "kilo": { "precioPorKg": 9500 } } },
+        { "name": "Pata / Muslo", "cut": "Cortes con hueso", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 6000 } } }
       ]
     },
     "cerdo": {
       "label": "Cerdo",
       "items": [
-        { "name": "Bondiola", "cut": "Cortes magros", "min": "Pieza ~2 kg", "venta": { "kilo": { "precioPorKg": 9900 } } },
-        { "name": "Churrasquito / Solomillo", "cut": "Cortes magros", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 11000 } } },
-        { "name": "Matambrito de Cerdo", "cut": "Cortes magros", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 14000 } } },
-        { "name": "Ribs", "cut": "Cortes con hueso", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 13000 } } },
-        { "name": "Pechito de Cerdo", "cut": "Cortes con hueso", "min": "", "venta": { "kilo": { "precioPorKg": 7950 } } },
-        { "name": "Carré de Cerdo", "cut": "Cortes magros", "min": "", "venta": { "kilo": { "precioPorKg": 7950 } } },
+        { "name": "Bondiola", "cut": "Cortes magros", "min": "Pieza ~2 kg", "venta": { "unidad": { "precioPorKg": 11000, "pesoAproxKg": 2 } }, "opcionesPreparacion": ["En churrascos"] },
+        { "name": "Churrasquito", "cut": "Cortes magros", "min": "Pieza ~0.5 kg", "venta": { "kilo": { "precioPorKg": 13000 } } },
+        { "name": "Solomillo", "cut": "Cortes magros", "min": "Pieza ~0.7 kg", "venta": { "kilo": { "precioPorKg": 13000 } }, "opcionesPreparacion": ["Para milanesa"] },
+        { "name": "Matambrito de Cerdo", "cut": "Cortes magros", "min": "Pieza ~1.5 kg", "venta": { "unidad": { "precioPorKg": 16000, "pesoAproxKg": 1.5 } } },
+        { "name": "Ribs", "cut": "Cortes con hueso", "min": "Pieza ~1 kg", "venta": { "unidad": { "precioPorKg": 14000, "pesoAproxKg": 1 } } },
+        { "name": "Pechito de Cerdo", "cut": "Cortes con hueso", "min": "Pieza ~5 kg", "venta": { "kilo": { "precioPorKg": 9200, "minKg": 3 }, "unidad": { "precioPorKg": 8500, "pesoAproxKg": 5 } }, "opcionesPreparacion": ["Cortado a banderita", "Cortado a 3 dedos", "Cortado a 5 dedos"] },
+        { "name": "Carré de Cerdo", "cut": "Cortes magros", "min": "Pieza ~5 kg", "venta": { "kilo": { "precioPorKg": 9000, "minKg": 3 }, "unidad": { "precioPorKg": 8000, "pesoAproxKg": 5 } }, "opcionesPreparacion": ["Deshuesado", "Cortado en churrascos", "Cortado para milanesa"] }
+      ]
+    },
+    "embutidos": {
+      "label": "Embutidos",
+      "items": [
         { "name": "Chorizo Puro Cerdo", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 6500 } } },
         { "name": "Chorizo Puro Cerdo Premium", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 10500 } } },
         { "name": "Chorizo Puro Cerdo c/ Morrón", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 10500 } } },
@@ -42,13 +57,14 @@
         { "name": "Morcilla Vasca", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 9900 } } }
       ]
     },
-    "pollo": {
-      "label": "Pollo",
+    "achuras": {
+      "label": "Achuras",
       "items": [
-        { "name": "Suprema", "cut": "Cortes magros", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 10800 } } },
-        { "name": "Churrasquito de Pollo", "cut": "Cortes magros", "min": "", "venta": { "kilo": { "precioPorKg": 9500 } } },
-        { "name": "Pata / Muslo", "cut": "Cortes con hueso", "min": "Pieza", "venta": { "kilo": { "precioPorKg": 6000 } } },
-        { "name": "Milanesa de Pollo", "cut": "Milanesa", "min": "Pieza", "venta": {} }
+        { "name": "Molleja", "cut": "Achuras", "min": "", "venta": { "kilo": { "precioPorKg": 27000 } } },
+        { "name": "Chinchulín", "cut": "Achuras", "min": "", "venta": { "kilo": { "precioPorKg": 5500 } } },
+        { "name": "Riñón", "cut": "Achuras", "min": "", "venta": { "kilo": { "precioPorKg": 5500 } } },
+        { "name": "Mondongo", "cut": "Achuras", "min": "Pieza ~5 kg", "venta": { "unidad": { "precioPorKg": 9900, "pesoAproxKg": 5 } } },
+        { "name": "Hígado", "cut": "Achuras", "min": "Pieza ~3 kg", "venta": { "unidad": { "precioPorKg": 5000, "pesoAproxKg": 3 } } }
       ]
     }
   }

@@ -4,6 +4,9 @@
 // modal para elegir cuál antes de sumarlo. Una vez que ya hay algo puesto,
 // tocar la card abre un modal de detalle con la opción de sumar también
 // el otro modo (ej: 3 kg "por Kilo" + 1 "Ventana" del mismo producto).
+// Si además el producto tiene opciones de preparación (js/preparation.js,
+// ej: "Cortado a 3 dedos"), se pregunta como paso extra justo antes de
+// agregar — ver withPrepStep().
 // Componente 100% autocontenido: inyecta su propio <style>, no depende de
 // styles.css. Usa Pricing (js/pricing.js) para los cálculos de precio.
 
@@ -369,6 +372,68 @@ const Cards = (function () {
   }
 
   /**
+   * Abre un modal para elegir cómo quiere recibir la mercadería el cliente
+   * (ej: "Cortado a 3 dedos"). Solo se llama si Preparation.hasChoice(item).
+   * @param {object} item
+   * @param {(preparacion: string) => void} onChoose
+   * @param {() => void} [onCancel] - se llama si se cierra sin elegir nada
+   */
+  function openPrepModal(item, onChoose, onCancel) {
+    const overlay = document.createElement("div");
+    overlay.className = "rc-modal-overlay";
+
+    function close() {
+      overlay.remove();
+      if (onCancel) onCancel();
+    }
+
+    const modal = document.createElement("div");
+    modal.className = "rc-modal";
+    modal.innerHTML = `<p class="rc-modal-title">¿Cómo querés el corte de "${item.name}"?</p>`;
+
+    Preparation.getOptions(item).forEach((option) => {
+      const optionBtn = document.createElement("button");
+      optionBtn.type = "button";
+      optionBtn.className = "rc-modal-option";
+      optionBtn.innerHTML = `<span class="rc-modal-option-label">${option}</span>`;
+      optionBtn.addEventListener("click", () => {
+        overlay.remove();
+        onChoose(option);
+      });
+      modal.appendChild(optionBtn);
+    });
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "rc-modal-cancel";
+    cancelBtn.textContent = "Cancelar";
+    cancelBtn.addEventListener("click", close);
+    modal.appendChild(cancelBtn);
+
+    overlay.appendChild(modal);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+    document.body.appendChild(overlay);
+  }
+
+  /**
+   * Si el producto tiene opciones de preparación, abre ese modal y recién
+   * después agrega; si no tiene, agrega directo. Centraliza el "paso extra"
+   * para no repetirlo en cada lugar que agrega una línea nueva al carrito.
+   * @param {object} item
+   * @param {(preparacion: string|undefined) => void} onReady - se llama con la preparación elegida (o undefined si no aplica)
+   * @param {() => void} [onCancel] - se llama si el usuario cierra el modal de preparación sin elegir
+   */
+  function withPrepStep(item, onReady, onCancel) {
+    if (Preparation.hasChoice(item)) {
+      openPrepModal(item, (preparacion) => onReady(preparacion), onCancel);
+    } else {
+      onReady(undefined);
+    }
+  }
+
+  /**
    * Abre el modal de detalle de un producto ya agregado: muestra cada modo
    * de venta con su cantidad actual y permite sumar el/los modo(s) que
    * todavía no se agregaron (ej: ya tenés "Ventana" y acá sumás "Por Kilo").
@@ -412,9 +477,20 @@ const Cards = (function () {
           addBtn.className = "rc-add-btn rc-add-btn--mini";
           addBtn.textContent = "+ Agregar";
           addBtn.addEventListener("click", () => {
-            qtyByMode[mode.key] = handlers.onIncrement(catKey, item, mode.key);
-            renderModal();
-            onChange();
+            // Se oculta el modal de detalle mientras se pregunta la preparación,
+            // para no tener dos fondos oscuros superpuestos; se restaura después.
+            overlay.style.visibility = "hidden";
+            const restore = () => (overlay.style.visibility = "");
+            withPrepStep(
+              item,
+              (preparacion) => {
+                restore();
+                qtyByMode[mode.key] = handlers.onIncrement(catKey, item, mode.key, preparacion);
+                renderModal();
+                onChange();
+              },
+              restore
+            );
           });
           controlWrap.appendChild(addBtn);
         } else {
@@ -468,7 +544,7 @@ const Cards = (function () {
    * Crea el elemento DOM de una tarjeta de producto.
    * @param {string} catKey - clave de la categoría (vacuno, cerdo, pollo)
    * @param {object} item - producto { name, cut, min, venta }
-   * @param {object} handlers - { onIncrement(catKey, item, modeKey) -> nuevaQty, onDecrement(catKey, item, modeKey) -> nuevaQty }
+   * @param {object} handlers - { onIncrement(catKey, item, modeKey, preparacion?) -> nuevaQty, onDecrement(catKey, item, modeKey) -> nuevaQty }
    * @returns {HTMLElement}
    */
   function createProductCard(catKey, item, handlers) {
@@ -536,9 +612,9 @@ const Cards = (function () {
       return fallback ? fallback.key : null;
     }
 
-    function addWithMode(modeKey) {
+    function addWithMode(modeKey, preparacion) {
       primaryModeKey = modeKey;
-      qtyByMode[modeKey] = handlers.onIncrement(catKey, item, modeKey);
+      qtyByMode[modeKey] = handlers.onIncrement(catKey, item, modeKey, preparacion);
       renderAction();
       pulse(card);
     }
@@ -557,9 +633,11 @@ const Cards = (function () {
         addBtn.textContent = "+ Agregar";
         addBtn.addEventListener("click", () => {
           if (modes.length > 1) {
-            openModeModal(item, modes, (modeKey) => addWithMode(modeKey));
+            openModeModal(item, modes, (modeKey) => {
+              withPrepStep(item, (preparacion) => addWithMode(modeKey, preparacion));
+            });
           } else {
-            addWithMode(modes[0].key);
+            withPrepStep(item, (preparacion) => addWithMode(modes[0].key, preparacion));
           }
         });
         action.appendChild(addBtn);

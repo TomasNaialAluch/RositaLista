@@ -24,10 +24,11 @@ La idea es bajar la fricción entre "ver la lista" y "hacer el pedido", sin nece
 │   └── styles.css                # Estilos generales de la página (layout, carrito, footer)
 │
 ├── js/
-│   ├── app.js                    # LÓGICA: carrito, totales, fetch de products.json, mensaje de WhatsApp
-│   ├── pricing.js                # Cálculo de precios (por kilo / por unidad), compartido por cards y app
-│   ├── preparation.js            # Opciones de preparación (ej: "Para milanesa") — datos listos, sin UI todavía
+│   ├── app.js                    # ORQUESTADOR: fetch de products.json, arma catálogo y nav, monta el carrito
+│   ├── pricing.js                # Cálculo de precios (por kilo / por unidad), compartido por cards y cart
+│   ├── preparation.js            # Opciones de preparación (ej: "Para milanesa") — datos + helpers, usado por cards.js y cart.js
 │   └── components/
+│       ├── cart.js               # Componente: estado del carrito, barra/modal de pedido, WhatsApp (autocontenido, su propio CSS)
 │       ├── cards.js              # Componente: grilla de cards de producto (autocontenido, su propio CSS)
 │       ├── nav.js                # Componente: barra de navegación flotante (autocontenido, su propio CSS)
 │       └── icons.js              # Íconos SVG minimalistas de animales, usados por cards y nav
@@ -41,9 +42,10 @@ La idea es bajar la fricción entre "ver la lista" y "hacer el pedido", sin nece
 ### Por qué está organizado así
 
 - **`data/`** es la única fuente de verdad de precios y categorías — pensala como la "API" del sitio, aunque sea un archivo estático. `js/app.js` la lee con `fetch()` al cargar la página.
-- **`js/components/`** son piezas de UI autocontenidas: cada una (`cards.js`, `nav.js`) inyecta su propio `<style>` y no depende de reglas sueltas en `css/styles.css`. Si tenés que tocar cómo se ve o se comporta la nav o las cards, el archivo que buscás está ahí adentro — no hay estilos escondidos en otro lado.
-- **`js/app.js`** es la lógica de negocio: mantiene el estado del carrito, calcula el total, arma el mensaje de WhatsApp y le pasa handlers (`onIncrement` / `onDecrement`) a los componentes. No sabe nada de cómo se pinta una card, solo de los datos.
-- **`css/styles.css`** solo tiene estilos de layout general (header, footer, carrito, modal) — todo lo que es específico de un componente vive con ese componente.
+- **`js/components/`** son piezas de UI autocontenidas: cada una (`cart.js`, `cards.js`, `nav.js`) inyecta su propio `<style>` y crea su propio DOM — no dependen de markup puesto en `index.html` ni de reglas sueltas en `css/styles.css`. Si tenés que tocar cómo se ve o se comporta el carrito, la nav o las cards, el archivo que buscás está ahí adentro — no hay estilos ni HTML escondidos en otro lado.
+- **`js/components/cart.js`** es el único que mantiene el estado del pedido (qué hay en el carrito, cantidades, total) y el único que sabe armar el mensaje de WhatsApp. No sabe nada de cómo se dibuja una card — solo expone `Cart.increment` / `Cart.decrement`, con la misma firma que esperan los handlers de `Cards`, y `Cart.init()` para montarse en la página.
+- **`js/app.js`** es puro orquestador: no tiene estado propio. Trae los datos, crea la nav (`Nav`), monta el carrito (`Cart.init`) y renderiza el catálogo (`Cards`) pasándole `Cart.increment`/`Cart.decrement` como callbacks.
+- **`css/styles.css`** solo tiene estilos de layout general (header, intro, footer) — todo lo que es específico de un componente vive con ese componente.
 
 ## Cómo actualizar los precios
 
@@ -71,7 +73,7 @@ El objeto `"venta"` define cómo se puede comprar el producto:
 - El número de WhatsApp también vive ahí, en `"whatsappNumber"` (arriba del todo del JSON).
 - No hace falta tocar ningún archivo `.js` ni `.html` para actualizar precios: todo se renderiza automáticamente desde `data/products.json`. El cálculo de precios (`js/pricing.js`) es compartido entre las cards y el carrito, así que solo hay un lugar donde se define la matemática.
 
-## Opciones de preparación (dato listo, todavía sin selector en la compra)
+## Opciones de preparación
 
 Algunos productos se pueden pedir de más de una forma además de "tal cual viene" — por ejemplo, el Peceto se puede llevar entero o cortado para milanesa. Eso se declara con `"opcionesPreparacion"`:
 
@@ -81,8 +83,60 @@ Algunos productos se pueden pedir de más de una forma además de "tal cual vien
 
 - El default es **siempre** "Sin manipular" (la pieza tal cual) — es universal, no hace falta declararlo en cada producto.
 - `"opcionesPreparacion"` es un array con las opciones **extra** que tiene ese producto puntual, además del default. Si no está el campo, el producto solo se entrega "Sin manipular".
-- `js/preparation.js` lee este dato (`Preparation.getOptions(item)` devuelve el default + las opciones extra; `Preparation.hasChoice(item)` dice si hay algo para elegir).
-- **Esto es solo el modelo de datos.** Todavía no hay ningún selector en el flujo de compra para elegirlo — es la base lista para cuando se arme ese paso (que probablemente viva en el mismo modal de detalle que ya existe para elegir "por kilo / por unidad", como un paso posterior y opcional).
+- `js/preparation.js` expone `Preparation.getOptions(item)` (default + extras) y `Preparation.hasChoice(item)` (si hay algo para elegir).
+- Cuando el producto tiene opciones (`hasChoice` = true), `cards.js` abre un modal (`openPrepModal`) para elegir la preparación **justo antes** de agregar la línea al carrito — ver `withPrepStep()` en `js/components/cards.js`. Este paso corre después de elegir el modo de venta (kilo/unidad) si el producto tiene los dos.
+- La preparación elegida queda guardada en la línea del carrito (`cart[key].preparacion`) y se muestra junto al nombre del producto en el resumen del pedido y en el mensaje de WhatsApp (ej: `Vacío (Por Unidad, Cortado a 3 dedos)`), vía `lineName()` en `js/components/cart.js`.
+- Una vez que la línea ya existe en el carrito, sumar/restar cantidad con los botones −/+ **no vuelve a preguntar** la preparación: se respeta la que ya se eligió.
+
+## El carrito (`js/components/cart.js`)
+
+Es un componente autocontenido, igual que `cards.js` y `nav.js`: no hay ningún `<div id="cartBar">` ni `<div id="cartModal">` en `index.html` — `Cart.init()` los crea por JS y los agrega a `document.body`, junto con su propio `<style>` (barra inferior, modal de detalle, botón flotante de WhatsApp).
+
+- **Estado**: el objeto `cart` vive como variable privada dentro del IIFE de `cart.js` — nadie de afuera lo toca directamente. Es un objeto plano en memoria (se pierde al recargar la página), con claves `"categoría|nombreProducto|modo"` y valores `{ qty, unitPrice, unitLabel, modeLabel, preparacion, product, category, mode }`.
+- **API pública** (lo único que el resto del código puede usar):
+  - `Cart.init(whatsappNumber, { onVisibilityChange })` — monta el DOM del carrito. `onVisibilityChange(visible)` es un callback opcional que `app.js` usa para levantar la nav (`Nav.setLifted`) cuando el carrito pasa a tener productos.
+  - `Cart.increment(catKey, item, mode, preparacion)` / `Cart.decrement(catKey, item, mode)` — suman/restan 1 a una línea y devuelven la cantidad resultante. Tienen la misma firma que los handlers `onIncrement`/`onDecrement` que espera `Cards.createCategorySection`, así que `app.js` los pasa directo sin ningún adaptador.
+- **Por dentro** usa `Pricing.getMode()` para el precio unitario y `Preparation.hasChoice()` para saber si hay que aclarar la preparación en el resumen — no depende de `cards.js` para nada.
+
+## Flujo de llamadas entre archivos
+
+Orden de carga en [`index.html`](index.html): `icons.js` → `pricing.js` → `preparation.js` → `cart.js` → `cards.js` → `nav.js` → `app.js` (el orden importa: cada módulo usa el global `const X = (function(){...})()` que definió el anterior).
+
+```
+index.html
+  └─ js/app.js            (arranca todo con init() al final del archivo)
+       ├─ fetch("data/products.json")             → llena PRODUCTS
+       ├─ Nav.createNav(PRODUCTS, goToCategory)    [js/components/nav.js]
+       │    └─ Icons[catKey]                       [js/components/icons.js] → ícono de cada botón
+       ├─ Cart.init(whatsappNumber, { onVisibilityChange })  [js/components/cart.js]
+       │    └─ crea la barra, el modal y el botón flotante de WhatsApp, y queda escuchando sus propios clicks
+       └─ Cards.createCategorySection(catKey, cat, { onIncrement: Cart.increment, onDecrement: Cart.decrement })  [js/components/cards.js]
+            ├─ Icons[catKey]                        → ícono del título de categoría
+            └─ Cards.createProductCard(catKey, item, handlers) — por cada producto
+                 ├─ Pricing.getSaleModes(item)       [js/pricing.js] → arma los modos de compra (kilo/unidad) y sus precios
+                 ├─ Preparation.hasChoice(item) / getOptions(item)  [js/preparation.js] → si hay que preguntar preparación
+                 ├─ openModeModal()   → si el producto tiene 2 modos, pregunta "¿Por Kilo o por Unidad?"
+                 ├─ openPrepModal()   → si el producto tiene opcionesPreparacion, pregunta cómo lo quiere
+                 ├─ openDetailModal() → al tocar una card ya agregada, deja sumar el otro modo de venta
+                 └─ al confirmar, llama handlers.onIncrement/onDecrement → o sea Cart.increment/Cart.decrement
+                      └─ cart.js: changeQty(catKey, item, mode, delta, preparacion)
+                           ├─ Pricing.getMode(item, mode)  → valida el modo y trae el precio unitario
+                           └─ actualiza `cart` (estado privado de cart.js) y llama updateUI()
+                                ├─ getTotal() / getCartEntries()  → recorren `cart`
+                                ├─ Pricing.money(n)               → formatea $ ARS
+                                ├─ onVisibilityChange(visible)    → app.js usa esto para llamar Nav.setLifted(navEl, ...)
+                                └─ renderCartModal(entries, total)
+                                     ├─ lineName(entry) → usa Pricing.getSaleModes() y Preparation.hasChoice()
+                                     └─ arma el texto del pedido y el link `whatsappBtn.href = https://wa.me/...`
+```
+
+Puntos clave de quién sabe qué:
+
+- **`data/products.json`** no sabe nada de JS — es solo datos, leídos una vez con `fetch()` en `app.js`.
+- **`js/pricing.js`** es la única fuente de la matemática de precios. No toca el DOM ni sabe qué es un carrito; solo transforma `item.venta` en modos de compra (`getSaleModes`) o formatea moneda (`money`). Lo usan tanto `cards.js` (para mostrar precios) como `cart.js` (para calcular el total).
+- **`js/preparation.js`** tampoco toca el DOM: solo lee `item.opcionesPreparacion` y expone `getOptions`/`hasChoice`. Lo usa `cards.js` (para decidir si abre el modal) y `cart.js` (para armar el texto de la línea del carrito).
+- **`js/components/cart.js`, `cards.js` y `nav.js`** son los únicos que tocan el DOM; son autocontenidos (cada uno inyecta su propio `<style>` y crea su propio markup) y no se conocen entre sí — `cards.js` no sabe que existe un carrito, solo llama a los callbacks `onIncrement`/`onDecrement` que le pasaron. `cart.js` no sabe que existen las cards, solo expone `increment`/`decrement`.
+- **`js/app.js`** no mantiene ningún estado propio: solo conecta las piezas (`Nav`, `Cart`, `Cards`) pasándoles los datos y los callbacks que necesitan.
 
 ## Cómo probarlo en local
 
