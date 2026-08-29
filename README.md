@@ -102,29 +102,31 @@ Algunos productos se pueden pedir de más de una forma además de "tal cual vien
 - La preparación elegida queda guardada en la línea del carrito (`cart[key].preparacion`) y se muestra junto al nombre del producto en el resumen del pedido y en el mensaje de WhatsApp (ej: `Vacío (Por Unidad, Cortado a 3 dedos)`), vía `lineName()` en `js/components/cart.js`.
 - Una vez que la línea ya existe en el carrito, sumar/restar cantidad con los botones −/+ **no vuelve a preguntar** la preparación: se respeta la que ya se eligió.
 
-## El carrito (`js/components/cart.js`)
+## El carrito (`js/components/cart/cart.js`)
 
-Es un componente autocontenido, igual que `cards.js` y `nav.js`: no hay ningún `<div id="cartBar">` ni `<div id="cartModal">` en `index.html` — `Cart.init()` los crea por JS y los agrega a `document.body`, junto con su propio `<style>` (barra inferior, modal de detalle, botón flotante de WhatsApp).
+Es un componente autocontenido, igual que `cards.js` y `nav.js`: no hay ningún `<div id="cartBar">` ni `<div id="cartModal">` en `index.html` — `Cart.init()` los crea por JS y los agrega a `document.body`, junto con su propio `<style>` (barra inferior, modal de detalle).
 
-- **Estado**: el objeto `cart` vive como variable privada dentro del IIFE de `cart.js` — nadie de afuera lo toca directamente. Es un objeto plano en memoria (se pierde al recargar la página), con claves `"categoría|nombreProducto|modo"` y valores `{ qty, unitPrice, unitLabel, modeLabel, preparacion, product, category, mode }`.
+- **Estado**: el pedido puede repartirse en varios **tickets** (ej: "Para mí" / "Para Juan") — ver `rediseno-tickets-pedido.md` para la spec completa. `tickets` es un objeto `{ [id]: { name, lines } }` privado dentro del IIFE de `cart.js`, con `activeTicketId` marcando cuál recibe lo que se agrega desde el catálogo. Cada línea (`lines`) usa la misma clave `"categoría|nombre|modo|preparación"` de siempre. Hay **un solo pago**: los tickets son para que Rosita sepa cómo armar las bolsas, no para dividir la cuenta — el total siempre es la suma de todos los tickets.
 - **API pública** (lo único que el resto del código puede usar):
-  - `Cart.init(whatsappNumber, { onVisibilityChange })` — monta el DOM del carrito. `onVisibilityChange(visible)` es un callback opcional que `app.js` usa para levantar la nav (`Nav.setLifted`) cuando el carrito pasa a tener productos.
-  - `Cart.increment(catKey, item, mode, preparacion)` / `Cart.decrement(catKey, item, mode)` — suman/restan 1 a una línea y devuelven la cantidad resultante. Tienen la misma firma que los handlers `onIncrement`/`onDecrement` que espera `Cards.createCategorySection`, así que `app.js` los pasa directo sin ningún adaptador.
-- **Por dentro** usa `Pricing.getMode()` para el precio unitario y `Preparation.hasChoice()` para saber si hay que aclarar la preparación en el resumen — no depende de `cards.js` para nada.
+  - `Cart.init(config, { onVisibilityChange })` — monta el DOM del carrito. `config` es el JSON de `data/config.json` completo (`whatsappNumber`, `ventaMinimaKg`, `barrios`). `onVisibilityChange(visible)` es un callback opcional que `app.js` usa para levantar la nav (`Nav.setLifted`) cuando el carrito pasa a tener productos.
+  - `Cart.increment(catKey, item, mode, preparacion)` / `Cart.decrement(catKey, item, mode, preparacion)` — suman/restan 1 a una línea **del ticket activo** y devuelven la cantidad resultante. Misma firma que los handlers `onIncrement`/`onDecrement` que esperan `Cards`/`ProductList`, así que `app.js` los pasa directo sin ningún adaptador — ninguno de los dos sabe que existen los tickets.
+- **Dividir una línea entre tickets** ("Dividir" en cada línea del modal) y **fusionar al borrar un ticket** siempre operan en kilos (`mergeKgIntoTicket`) — un producto "por unidad" ya es, en el fondo, plata por kilo (`Pricing.getSaleModes` expone `precioPorKg`/`pesoAproxKg` para esto).
+- **Mínimo de pedido y envío**: si el total de kilos de todos los tickets no llega a `config.ventaMinimaKg`, aparece un aviso ("Te faltan X kg…") y, al enviar, un selector de barrio obligatorio (`config.barrios`, + opción "Otro") que suma el costo de envío al total.
+- **Por dentro** usa `Pricing.getMode()`/`Pricing.getSaleModes()` para los precios y `Preparation.hasChoice()` para saber si hay que aclarar la preparación en el resumen — no depende de `cards.js` para nada.
 
 ## Flujo de llamadas entre archivos
 
-Orden de carga en [`index.html`](index.html): `icons.js` → `pricing.js` → `preparation.js` → `cart.js` → `cards.js` → `nav.js` → `app.js` (el orden importa: cada módulo usa el global `const X = (function(){...})()` que definió el anterior).
+Orden de carga en [`index.html`](index.html): `icons.js` → `pricing.js` → `preparation.js` → `chrome/*.js` → `cart/cart.js` → `catalog/cards.js` → `catalog/productList.js` → `nav/nav.js` → `app.js` (el orden importa: cada módulo usa el global `const X = (function(){...})()` que definió el anterior).
 
 ```
 index.html
   └─ js/app.js            (arranca todo con init() al final del archivo)
-       ├─ fetch("data/products.json")             → llena PRODUCTS
-       ├─ Nav.createNav(PRODUCTS, goToCategory)    [js/components/nav.js]
+       ├─ fetch("data/products.json") + fetch("data/config.json")  → llena PRODUCTS y config
+       ├─ Nav.createNav(PRODUCTS, goToCategory)    [js/components/nav/nav.js]
        │    └─ Icons[catKey]                       [js/components/icons.js] → ícono de cada botón
-       ├─ Cart.init(whatsappNumber, { onVisibilityChange })  [js/components/cart.js]
-       │    └─ crea la barra, el modal y el botón flotante de WhatsApp, y queda escuchando sus propios clicks
-       └─ Cards.createCategorySection(catKey, cat, { onIncrement: Cart.increment, onDecrement: Cart.decrement })  [js/components/cards.js]
+       ├─ Cart.init(config, { onVisibilityChange })  [js/components/cart/cart.js]
+       │    └─ crea la barra y el modal (con sus tickets), y queda escuchando sus propios clicks
+       └─ Cards.createCategorySection(catKey, cat, { onIncrement: Cart.increment, onDecrement: Cart.decrement })  [js/components/catalog/cards.js]
             ├─ Icons[catKey]                        → ícono del título de categoría
             └─ Cards.createProductCard(catKey, item, handlers) — por cada producto
                  ├─ Pricing.getSaleModes(item)       [js/pricing.js] → arma los modos de compra (kilo/unidad) y sus precios
