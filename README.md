@@ -48,7 +48,13 @@ La idea es bajar la fricción entre "ver la lista" y "hacer el pedido", sin nece
 ├── assets/
 │   └── logo.png                  # Logo de Rosita
 │
-└── rediseno-cards.md             # Spec de diseño de las cards (referencia histórica)
+└── docs/                          # Specs de diseño de features (implementadas o futuras) — referencia histórica
+    ├── rediseno-cards.md
+    ├── rediseno-dual-modo.md
+    ├── rediseno-multi-preparacion.md
+    ├── rediseno-orbe-guia.md
+    ├── rediseno-tickets-pedido.md
+    └── calcularAsado-guia.md
 ```
 
 ### Por qué está organizado así

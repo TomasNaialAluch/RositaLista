@@ -67,6 +67,26 @@
   max-height: 85vh;
   overflow-y: auto;
   position: relative;
+  transition: transform 0.22s ease;
+}
+
+.cart-modal-content--dragging {
+  transition: none;
+}
+
+/* Barrita para deslizar el modal hacia abajo y cerrarlo (bottom-sheet). */
+.cart-modal-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 999px;
+  margin: -8px auto 14px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.cart-modal-content--dragging .cart-modal-handle {
+  cursor: grabbing;
 }
 
 @media (min-width: 640px) {
@@ -161,16 +181,28 @@
 .cart-ticket-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   border: 1.5px solid var(--border);
   border-radius: 12px;
-  padding: 8px 10px;
+  padding: 10px 8px 10px 12px;
   cursor: pointer;
 }
 
 .cart-ticket-chip--active {
   border-color: var(--rosita-pink);
   background: var(--rosita-pink-light);
+}
+
+.cart-ticket-name {
+  flex: 1;
+  min-width: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cart-ticket-name-input {
@@ -199,15 +231,42 @@
   flex-shrink: 0;
 }
 
+.cart-ticket-edit,
 .cart-ticket-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border: none;
   background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+.cart-ticket-edit {
+  color: var(--rosita-pink-dark);
+}
+
+.cart-ticket-edit svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.cart-ticket-edit:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.cart-ticket-delete {
   color: var(--text-muted);
   font-size: 1.2rem;
   line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
-  padding: 0 2px;
+}
+
+.cart-ticket-delete:hover {
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .cart-new-ticket-btn {
