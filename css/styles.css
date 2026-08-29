@@ -39,6 +39,43 @@ main {
   padding: 0 16px;
 }
 
+/* Fila del botón "minimizar/expandir todo" + el toggle Grid/Lista. Es hija
+   directa de <body> (no de <main>, que tiene max-width:780px), así que
+   width:100% ya es el ancho real de la pantalla sin necesidad del truco
+   100vw — ese truco en Chrome no descuenta el ancho del scrollbar y mete
+   un scroll horizontal de más. El botón de la izquierda queda pegado al
+   borde real (con el mismo padding que <main>) y el toggle Grid/Lista
+   centrado en el medio. */
+.catalog-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+  padding: 0 16px;
+  margin: 0 0 16px;
+  box-sizing: border-box;
+}
+
+.catalog-toolbar > .collapse-toggle-btn {
+  justify-self: start;
+}
+
+.catalog-toolbar > .view-toggle {
+  grid-column: 2;
+  justify-self: center;
+  margin: 0;
+}
+
+/* #catalog vive fuera de <main> (ver js/app.js) para quedar después de
+   .catalog-toolbar en el orden visual, pero necesita el mismo max-width
+   centrado que <main> para que las categorías no queden pegadas a los
+   bordes de la pantalla en desktop. */
+#catalog {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
 /* Estas reglas de categoría son compartidas a propósito entre cards.js y
    productList.js (título colapsable + animación de abrir/cerrar) — no son
    específicas de ninguna de las dos vistas, por eso viven acá y no

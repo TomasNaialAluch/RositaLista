@@ -1,5 +1,4 @@
 {
-  "whatsappNumber": "5491166246009",
   "categories": {
     "vacuno": {
       "label": "Vacuno",
@@ -65,6 +64,12 @@
         { "name": "Riñón", "cut": "Achuras", "min": "", "venta": { "kilo": { "precioPorKg": 5500 } } },
         { "name": "Mondongo", "cut": "Achuras", "min": "Pieza ~5 kg", "venta": { "unidad": { "precioPorKg": 9900, "pesoAproxKg": 5 } } },
         { "name": "Hígado", "cut": "Achuras", "min": "Pieza ~3 kg", "venta": { "unidad": { "precioPorKg": 5000, "pesoAproxKg": 3 } } }
+      ]
+    },
+    "provoleta": {
+      "label": "Provoleta",
+      "items": [
+        { "name": "Provoleta", "cut": "Provoleta", "min": "", "venta": { "unidad": { "precioPorKg": 6500, "pesoAproxKg": 1 } } }
       ]
     }
   }

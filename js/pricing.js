@@ -18,7 +18,10 @@ const Pricing = (function () {
    *     Medio se vende entero como "Ventana"). Si no se pone, no pasa nada — el modo
    *     "unidad" funciona igual, solo que sin alias.
    * }
-   * @returns {Array<{key: 'kilo'|'unidad', label: string, aliasName: string|null, unitPrice: number, unitLabel: string, minQty: number, detail: string}>}
+   * @returns {Array<{key: 'kilo'|'unidad', label: string, aliasName: string|null, unitPrice: number, unitLabel: string, minQty: number, precioPorKg: number, pesoAproxKg: number|null, detail: string}>}
+   *   "precioPorKg" y "pesoAproxKg" son la base para repartir/fusionar líneas entre tickets
+   *   (ver Cart en js/components/cart/cart.js): todo modo, sea "kilo" o "unidad", es en el
+   *   fondo "plata por kilo" — precioPorKg lo deja expuesto sin tener que derivarlo de vuelta.
    */
   function getSaleModes(item) {
     const venta = item.venta || {};
@@ -33,6 +36,8 @@ const Pricing = (function () {
         unitPrice: venta.kilo.precioPorKg,
         unitLabel: "kg",
         minQty,
+        precioPorKg: venta.kilo.precioPorKg,
+        pesoAproxKg: null,
         detail:
           minQty > 1
             ? `${money(venta.kilo.precioPorKg)} / kg (mín. ${minQty} kg)`
@@ -49,6 +54,8 @@ const Pricing = (function () {
         unitPrice,
         unitLabel: "unidad",
         minQty: 1,
+        precioPorKg: venta.unidad.precioPorKg,
+        pesoAproxKg: venta.unidad.pesoAproxKg,
         detail: `${money(venta.unidad.precioPorKg)} / kg (~${venta.unidad.pesoAproxKg} kg) = ${money(unitPrice)}`,
       });
     }

@@ -1,0 +1,22 @@
+.site-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 16px 10px;
+  text-align: center;
+}
+
+.site-header .logo {
+  width: 140px;
+  height: auto;
+  max-width: 40vw;
+}
+
+.site-header .tagline {
+  color: var(--rosita-pink-dark);
+  letter-spacing: 3px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  margin: 4px 0 0;
+  font-weight: 600;
+}

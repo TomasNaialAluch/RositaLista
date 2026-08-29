@@ -1,0 +1,18 @@
+.intro {
+  text-align: center;
+  margin: 18px 0 22px;
+}
+
+.intro h1 {
+  font-size: 2rem;
+  color: var(--rosita-pink-dark);
+  margin: 0 0 8px;
+}
+
+.intro p {
+  color: var(--text-muted);
+  font-size: 0.98rem;
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.5;
+}

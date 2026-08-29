@@ -41,14 +41,22 @@ const Icons = {
 
   embutidos: `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4.5 9.2c0-2.1 1.6-3.4 3.6-3.4s3.6 1.3 3.6 3.4-1.6 3.4-3.6 3.4-3.6-1.3-3.6-3.4z"/>
-      <path d="M11.4 9.2h1.6"/>
-      <path d="M13.4 7.4c0-1.7 1.4-2.9 3.3-2.9s3.8 1.7 3.8 5-1.7 5-3.8 5-3.3-1.2-3.3-2.9"/>
-      <path d="M16.8 6.6v6.9"/>
+      <g transform="rotate(-25 12 12)">
+        <rect x="3.5" y="9.3" width="17" height="5.4" rx="2.7"/>
+        <path d="M9 9.3v5.4"/>
+        <path d="M15 9.3v5.4"/>
+      </g>
     </svg>`,
 
   achuras: `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 3.2c1.7 2.1.9 3.4-.2 4.7-1.5 1.8-2.3 3.2-2.3 5.1a4.6 4.6 0 0 0 9.2 0c0-2-1-3.3-2.1-4.4.4 1.6-.4 2.6-1.2 3 .6-2.2-.3-4.5-1.7-6-.2 1.1-.9 1.9-1.8 2.2.3-1.9.2-3.3.1-4.6z"/>
+    </svg>`,
+
+  provoleta: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 12L17 4.5a8 8 0 0 1 0 15z"/>
+      <circle cx="9" cy="11" r="1" fill="currentColor" stroke="none"/>
+      <circle cx="13" cy="14.5" r="1" fill="currentColor" stroke="none"/>
     </svg>`,
 };

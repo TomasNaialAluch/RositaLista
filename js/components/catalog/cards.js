@@ -3,7 +3,9 @@
 // tiene dos modos de venta (por kilo y por unidad), "Agregar" abre un
 // modal para elegir cuál antes de sumarlo, y si además tiene opciones de
 // preparación (js/preparation.js, ej: "Cortado a 3 dedos"), se pregunta
-// como paso extra justo después — ver withPrepStep().
+// como paso extra justo después — ver withPrepStep(). El último paso es
+// siempre un modal de cantidad (ver openQuantityModal) para poder ajustar
+// cuánto se quiere sin volver al home ni tocar la card de nuevo.
 //
 // Cada combinación (modo, preparación) es una línea independiente del
 // carrito: se puede tener, por ejemplo, "Peceto · unidad · Entera" y
@@ -15,319 +17,11 @@
 // sumar el otro modo (ej: "por Kilo" además de "Ventana") como agregar
 // otra preparación dentro del mismo modo (ej: otro Peceto, esta vez para
 // milanesa).
-// Componente 100% autocontenido: inyecta su propio <style>, no depende de
-// styles.css. Usa Pricing (js/pricing.js) para los cálculos de precio.
+// Crea su propio DOM, no depende de markup puesto en index.html. El CSS
+// vive aparte en css/components/catalog/cards.css, importado por <link>
+// en index.html. Usa Pricing (js/pricing.js) para los cálculos de precio.
 
 const Cards = (function () {
-  const STYLE_ID = "rc-styles";
-
-  const CSS = `
-    .rc-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-
-    @media (min-width: 600px) {
-      .rc-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-
-    @media (min-width: 900px) {
-      .rc-grid { grid-template-columns: repeat(4, 1fr); }
-    }
-
-    .rc-card {
-      display: flex;
-      flex-direction: column;
-      background: #ffffff;
-      border-radius: 18px;
-      padding: 12px;
-      min-height: 150px;
-      min-width: 0;
-      box-sizing: border-box;
-      overflow: hidden;
-      box-shadow: 0 2px 10px rgba(161, 61, 87, 0.1);
-      transition: box-shadow 0.2s ease;
-    }
-
-    .rc-card--pulse {
-      box-shadow: 0 0 0 2px rgba(193, 79, 107, 0.55), 0 2px 10px rgba(161, 61, 87, 0.1);
-    }
-
-    .rc-name {
-      font-family: 'Inter', system-ui, sans-serif;
-      font-weight: 700;
-      font-size: 0.88rem;
-      color: #2b2224;
-      margin: 0 0 4px;
-      line-height: 1.25;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .rc-meta {
-      font-family: 'Inter', system-ui, sans-serif;
-      color: #8a7a7d;
-      font-size: 0.68rem;
-      margin: 0 0 6px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .rc-price {
-      font-family: 'Inter', system-ui, sans-serif;
-      color: #a53d57;
-      font-weight: 700;
-      font-size: 0.9rem;
-      margin: 0 0 2px;
-    }
-
-    .rc-price small {
-      font-weight: 500;
-      color: #8a7a7d;
-      font-size: 0.63rem;
-    }
-
-    .rc-price-alt {
-      font-family: 'Inter', system-ui, sans-serif;
-      color: #8a7a7d;
-      font-size: 0.65rem;
-      margin: 0 0 8px;
-    }
-
-    .rc-unavailable {
-      font-family: 'Inter', system-ui, sans-serif;
-      color: #8a7a7d;
-      font-style: italic;
-      font-size: 0.72rem;
-      margin-top: auto;
-    }
-
-    .rc-action {
-      margin-top: auto;
-    }
-
-    .rc-add-btn {
-      width: 100%;
-      border: none;
-      background: #c14f6b;
-      color: #fff;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-weight: 700;
-      font-size: 0.78rem;
-      padding: 9px 0;
-      border-radius: 999px;
-      cursor: pointer;
-      animation: rc-pop 0.18s ease;
-    }
-
-    .rc-add-btn:hover {
-      background: #a53d57;
-    }
-
-    .rc-add-btn:active {
-      transform: scale(0.96);
-    }
-
-    .rc-stepper {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #f7e8ec;
-      border-radius: 999px;
-      padding: 4px;
-      animation: rc-pop 0.18s ease;
-    }
-
-    .rc-step-btn {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      border: none;
-      background: #fff;
-      color: #a53d57;
-      font-size: 0.95rem;
-      line-height: 1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .rc-qty {
-      font-family: 'Inter', system-ui, sans-serif;
-      font-weight: 700;
-      color: #a53d57;
-      font-size: 0.85rem;
-    }
-
-    @keyframes rc-pop {
-      from { transform: scale(0.9); opacity: 0.4; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    .rc-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(43, 34, 36, 0.55);
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      z-index: 60;
-    }
-
-    @media (min-width: 640px) {
-      .rc-modal-overlay { align-items: center; }
-    }
-
-    .rc-modal {
-      background: #fff;
-      width: 100%;
-      max-width: 420px;
-      border-radius: 20px 20px 0 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    @media (min-width: 640px) {
-      .rc-modal { border-radius: 20px; }
-    }
-
-    .rc-modal-title {
-      font-family: 'Playfair Display', serif;
-      color: #a53d57;
-      font-size: 1.1rem;
-      margin: 0 0 14px;
-    }
-
-    .rc-modal-option {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      width: 100%;
-      border: 1.5px solid #f7e8ec;
-      background: #fff;
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      font-family: 'Inter', system-ui, sans-serif;
-      text-align: left;
-    }
-
-    .rc-modal-option:hover {
-      background: #f7e8ec;
-    }
-
-    .rc-modal-option-label {
-      font-weight: 700;
-      color: #2b2224;
-      font-size: 0.92rem;
-    }
-
-    .rc-modal-option-detail {
-      color: #a53d57;
-      font-weight: 600;
-      font-size: 0.88rem;
-      margin-top: 2px;
-    }
-
-    .rc-modal-cancel {
-      display: block;
-      width: 100%;
-      border: none;
-      background: transparent;
-      color: #8a7a7d;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 0.85rem;
-      padding: 8px 0 0;
-      cursor: pointer;
-    }
-
-    .rc-card--tappable {
-      cursor: pointer;
-    }
-
-    .rc-modal-mode-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid #f7e8ec;
-    }
-
-    .rc-modal-mode-row:last-of-type {
-      border-bottom: none;
-    }
-
-    .rc-modal-mode-info {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-
-    .rc-modal-mode-name {
-      font-family: 'Inter', system-ui, sans-serif;
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: #2b2224;
-    }
-
-    .rc-modal-mode-detail {
-      font-family: 'Inter', system-ui, sans-serif;
-      color: #a53d57;
-      font-weight: 600;
-      font-size: 0.8rem;
-      margin-top: 1px;
-    }
-
-    .rc-modal-mode-control {
-      flex-shrink: 0;
-      width: 108px;
-    }
-
-    .rc-add-btn--mini {
-      padding: 7px 0;
-      font-size: 0.72rem;
-    }
-
-    .rc-stepper--mini {
-      padding: 3px;
-    }
-
-    .rc-stepper--mini .rc-step-btn {
-      width: 22px;
-      height: 22px;
-      font-size: 0.85rem;
-    }
-
-    .rc-stepper--mini .rc-qty {
-      font-size: 0.72rem;
-    }
-
-    .rc-modal-item-total {
-      display: flex;
-      justify-content: space-between;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-weight: 700;
-      color: #a53d57;
-      font-size: 0.95rem;
-      padding: 12px 0 4px;
-    }
-  `;
-
-  function injectStyles() {
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement("style");
-    style.id = STYLE_ID;
-    style.textContent = CSS;
-    document.head.appendChild(style);
-  }
-
   const money = Pricing.money;
 
   function pulse(card) {
@@ -507,6 +201,89 @@ const Cards = (function () {
       // el modal de detalle al leer/escribir el estado de esta combinación.
       onReady(Preparation.DEFAULT_OPTION);
     }
+  }
+
+  /**
+   * Último paso del flujo de "Agregar": una vez elegidos modo y preparación,
+   * ya se sumó el mínimo de compra al carrito (ver addCombo) — este modal
+   * deja ajustar esa cantidad con el mismo stepper del modal de detalle
+   * antes de volver al home, en vez de que el usuario tenga que volver a
+   * tocar la card para recién ahí subir la cantidad.
+   * @param {string} catKey
+   * @param {object} item
+   * @param {Array} modes
+   * @param {object} state
+   * @param {object} handlers
+   * @param {string} modeKey
+   * @param {string} preparacion
+   * @param {() => void} onChange - se llama después de cada cambio (para refrescar la card de atrás)
+   */
+  function openQuantityModal(catKey, item, modes, state, handlers, modeKey, preparacion, onChange) {
+    const mode = modes.find((m) => m.key === modeKey);
+
+    const overlay = document.createElement("div");
+    overlay.className = "rc-modal-overlay";
+
+    const modal = document.createElement("div");
+    modal.className = "rc-modal";
+    overlay.appendChild(modal);
+
+    function render() {
+      const qty = getComboQty(state, modeKey, preparacion);
+
+      const titleParts = [item.name];
+      if (modes.length > 1) titleParts.push(mode.aliasName ? `${mode.label} — ${mode.aliasName}` : mode.label);
+      if (preparacion !== Preparation.DEFAULT_OPTION) titleParts.push(preparacion);
+
+      modal.innerHTML = `
+        <p class="rc-modal-title">${titleParts.join(" · ")}</p>
+        <p class="rc-modal-mode-detail">${mode.detail}</p>
+      `;
+
+      const qtyText = mode.unitLabel === "kg" ? `${qty} kg` : `${qty} ${qty === 1 ? "unidad" : "unidades"}`;
+      const stepper = document.createElement("div");
+      stepper.className = "rc-stepper";
+      stepper.style.marginTop = "14px";
+      stepper.innerHTML = `
+        <button type="button" class="rc-step-btn rc-minus" aria-label="Restar">−</button>
+        <span class="rc-qty">${qtyText}</span>
+        <button type="button" class="rc-step-btn rc-plus" aria-label="Sumar">+</button>
+      `;
+      stepper.querySelector(".rc-minus").addEventListener("click", () => {
+        const newQty = decrementRespectingMin(handlers, catKey, item, mode, preparacion, qty);
+        setComboQty(state, modeKey, preparacion, newQty);
+        onChange();
+        if (newQty === 0) {
+          overlay.remove();
+          return;
+        }
+        render();
+      });
+      stepper.querySelector(".rc-plus").addEventListener("click", () => {
+        setComboQty(state, modeKey, preparacion, handlers.onIncrement(catKey, item, modeKey, preparacion));
+        onChange();
+        render();
+      });
+      modal.appendChild(stepper);
+
+      const totalLine = document.createElement("p");
+      totalLine.className = "rc-modal-item-total";
+      totalLine.innerHTML = `<span>Subtotal</span><span>${money(qty * mode.unitPrice)}</span>`;
+      modal.appendChild(totalLine);
+
+      const confirmBtn = document.createElement("button");
+      confirmBtn.type = "button";
+      confirmBtn.className = "rc-add-btn";
+      confirmBtn.textContent = "Agregar al carrito";
+      confirmBtn.addEventListener("click", () => overlay.remove());
+      modal.appendChild(confirmBtn);
+    }
+
+    render();
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+    document.body.appendChild(overlay);
   }
 
   /**
@@ -739,6 +516,7 @@ const Cards = (function () {
       addOrIncrementCombo(handlers, catKey, item, modes, state, modeKey, preparacion);
       renderAction();
       pulse(card);
+      openQuantityModal(catKey, item, modes, state, handlers, modeKey, preparacion, renderAction);
     }
 
     function renderAction() {
@@ -815,8 +593,6 @@ const Cards = (function () {
    * @param {object} handlers - ver createProductCard
    */
   function createCategorySection(catKey, category, handlers) {
-    injectStyles();
-
     const section = document.createElement("section");
     section.className = "category-section";
     section.id = `cat-${catKey}`;

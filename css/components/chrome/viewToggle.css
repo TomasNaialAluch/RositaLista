@@ -1,0 +1,36 @@
+.view-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+
+.view-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  color: var(--text-muted);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.view-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.view-toggle-btn:hover {
+  border-color: var(--rosita-pink);
+  color: var(--rosita-pink-dark);
+}
+
+.view-toggle-btn--active {
+  background: var(--rosita-pink-dark);
+  border-color: var(--rosita-pink-dark);
+  color: #fff;
+}

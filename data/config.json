@@ -1,0 +1,21 @@
+{
+  "whatsappNumber": "5491166246009",
+  "ventaMinimaKg": 8,
+  "barrios": [
+    { "nombre": "Mataderos", "costoEnvio": 0 },
+    { "nombre": "Liniers", "costoEnvio": 1500 },
+    { "nombre": "Floresta", "costoEnvio": 2000 }
+  ],
+  "quienesSomos": {
+    "titulo": "Tradición familiar, calidad generación tras generación.",
+    "parrafos": [
+      "Desde hace 4 generaciones, nuestra familia ha dedicado su vida a la carne. Hoy, con la misma pasión de siempre, llevamos la tradición de Rosita al mundo digital. Nuestra abuela Rosita, con sus 92 años, sigue siendo nuestra inspiración y guía. Su legado de calidad y sabor auténtico se mantiene vivo en cada corte que seleccionamos.",
+      "En Nuestra Tienda Online Rosita, creemos que la carne es más que un alimento: es una experiencia. Por eso, seleccionamos solo los mejores cortes, directamente del mayorista, y los llevamos a tu puerta con la misma frescura que si los hubieras elegido tú mismo en la carnicería. Nuestra abuela Rosita nos enseñó que la calidad no tiene precio, y ese es el compromiso que asumimos con cada cliente."
+    ],
+    "frigorifico": {
+      "titulo": "Nuestro Frigorífico",
+      "texto": "Rosita opera desde Frigorífico La Trinidad S.A., un establecimiento con años de experiencia en el procesamiento y distribución de carnes de la más alta calidad. Trabajamos directamente con ellos para garantizar la frescura y calidad de cada corte que llega a tu mesa.",
+      "direccion": "José Enrique Rodó 6341, Mataderos"
+    }
+  }
+}
