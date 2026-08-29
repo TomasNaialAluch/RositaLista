@@ -1,12 +1,20 @@
 // Cards de producto: grilla compacta (2 columnas en mobile) + botón de
 // acción de dos estados ("Agregar" -> selector − qty +). Si el producto
 // tiene dos modos de venta (por kilo y por unidad), "Agregar" abre un
-// modal para elegir cuál antes de sumarlo. Una vez que ya hay algo puesto,
-// tocar la card abre un modal de detalle con la opción de sumar también
-// el otro modo (ej: 3 kg "por Kilo" + 1 "Ventana" del mismo producto).
-// Si además el producto tiene opciones de preparación (js/preparation.js,
-// ej: "Cortado a 3 dedos"), se pregunta como paso extra justo antes de
-// agregar — ver withPrepStep().
+// modal para elegir cuál antes de sumarlo, y si además tiene opciones de
+// preparación (js/preparation.js, ej: "Cortado a 3 dedos"), se pregunta
+// como paso extra justo después — ver withPrepStep().
+//
+// Cada combinación (modo, preparación) es una línea independiente del
+// carrito: se puede tener, por ejemplo, "Peceto · unidad · Entera" y
+// "Peceto · unidad · Para milanesa" al mismo tiempo, cada una con su
+// propia cantidad. Por eso el estado de cada card no es "una cantidad por
+// modo" sino "una cantidad por cada combinación modo+preparación ya
+// agregada" (ver el objeto `state` en createProductCard). Una vez que hay
+// algo agregado, tocar la card abre el modal de detalle, que permite tanto
+// sumar el otro modo (ej: "por Kilo" además de "Ventana") como agregar
+// otra preparación dentro del mismo modo (ej: otro Peceto, esta vez para
+// milanesa).
 // Componente 100% autocontenido: inyecta su propio <style>, no depende de
 // styles.css. Usa Pricing (js/pricing.js) para los cálculos de precio.
 
@@ -328,6 +336,71 @@ const Cards = (function () {
   }
 
   /**
+   * Suma de a 1 hasta llegar al mínimo de compra del modo (ej: Pechito de
+   * Cerdo por kilo tiene mínimo 3 kg — al agregar, salta directo a 3 kg
+   * en vez de arrancar en 1). Para modos sin mínimo (minQty 1) es un solo paso.
+   */
+  function incrementToQty(handlers, catKey, item, modeKey, targetQty, preparacion) {
+    let qty = 0;
+    while (qty < targetQty) {
+      qty = handlers.onIncrement(catKey, item, modeKey, preparacion);
+    }
+    return qty;
+  }
+
+  /**
+   * Resta 1, salvo que ya esté en el mínimo de compra: ahí baja directo a 0
+   * (saca la línea del carrito) en vez de dejarla en una cantidad inválida
+   * por debajo del mínimo.
+   */
+  function decrementRespectingMin(handlers, catKey, item, mode, preparacion, currentQty) {
+    if (currentQty > mode.minQty) {
+      return handlers.onDecrement(catKey, item, mode.key, preparacion);
+    }
+    let qty = currentQty;
+    while (qty > 0) {
+      qty = handlers.onDecrement(catKey, item, mode.key, preparacion);
+    }
+    return qty;
+  }
+
+  /** Lee la cantidad de una combinación (modo, preparación) del estado de una card. */
+  function getComboQty(state, modeKey, prep) {
+    return (state[modeKey] && state[modeKey][prep]) || 0;
+  }
+
+  /** Guarda la cantidad de una combinación (modo, preparación) en el estado de una card. */
+  function setComboQty(state, modeKey, prep, qty) {
+    if (!state[modeKey]) state[modeKey] = {};
+    state[modeKey][prep] = qty;
+  }
+
+  /**
+   * Agrega 1 a una combinación (modo, preparación): si ya existía, suma
+   * normal; si es nueva, salta directo al mínimo de compra del modo.
+   */
+  function addOrIncrementCombo(handlers, catKey, item, modes, state, modeKey, prep) {
+    const mode = modes.find((m) => m.key === modeKey);
+    const existing = getComboQty(state, modeKey, prep);
+    const qty =
+      existing > 0
+        ? handlers.onIncrement(catKey, item, modeKey, prep)
+        : incrementToQty(handlers, catKey, item, modeKey, mode.minQty, prep);
+    setComboQty(state, modeKey, prep, qty);
+    return qty;
+  }
+
+  /** Busca cualquier combinación (modo, preparación) con cantidad puesta, la que sea. */
+  function findAnyActiveCombo(modes, state) {
+    for (const mode of modes) {
+      const preps = state[mode.key] || {};
+      const prep = Object.keys(preps).find((p) => preps[p] > 0);
+      if (prep) return { modeKey: mode.key, preparacion: prep };
+    }
+    return null;
+  }
+
+  /**
    * Abre un modal para elegir el modo de venta de un producto con más de uno.
    * @param {object} item
    * @param {Array} modes - salida de Pricing.getSaleModes(item)
@@ -429,22 +502,28 @@ const Cards = (function () {
     if (Preparation.hasChoice(item)) {
       openPrepModal(item, (preparacion) => onReady(preparacion), onCancel);
     } else {
-      onReady(undefined);
+      // Sin opciones: la preparación siempre es el default, como valor
+      // concreto (no undefined) para que coincida con la clave que usa
+      // el modal de detalle al leer/escribir el estado de esta combinación.
+      onReady(Preparation.DEFAULT_OPTION);
     }
   }
 
   /**
-   * Abre el modal de detalle de un producto ya agregado: muestra cada modo
-   * de venta con su cantidad actual y permite sumar el/los modo(s) que
-   * todavía no se agregaron (ej: ya tenés "Ventana" y acá sumás "Por Kilo").
+   * Abre el modal de detalle de un producto ya agregado: para cada modo de
+   * venta muestra sus preparaciones ya agregadas (o la cantidad simple, si
+   * el producto no tiene preparaciones) y deja sumar tanto el otro modo
+   * (ej: ya tenés "Ventana" y acá sumás "Por Kilo") como otra preparación
+   * dentro del mismo modo (ej: ya tenés Peceto "Entera" y acá sumás uno
+   * "Para milanesa").
    * @param {string} catKey
    * @param {object} item
    * @param {Array} modes - salida de Pricing.getSaleModes(item)
-   * @param {object} qtyByMode - { [modeKey]: qty } — se muta en el lugar
-   * @param {object} handlers - onIncrement/onDecrement(catKey, item, modeKey)
+   * @param {object} state - { [modeKey]: { [preparacion]: qty } } — se muta en el lugar
+   * @param {object} handlers - onIncrement/onDecrement(catKey, item, modeKey, preparacion)
    * @param {() => void} onChange - se llama después de cada cambio (para refrescar la card de atrás)
    */
-  function openDetailModal(catKey, item, modes, qtyByMode, handlers, onChange) {
+  function openDetailModal(catKey, item, modes, state, handlers, onChange) {
     const overlay = document.createElement("div");
     overlay.className = "rc-modal-overlay";
 
@@ -452,74 +531,110 @@ const Cards = (function () {
     modal.className = "rc-modal";
     overlay.appendChild(modal);
 
+    function buildRow(mode, prep, qty, labelText) {
+      const row = document.createElement("div");
+      row.className = "rc-modal-mode-row";
+      row.innerHTML = `
+        <div class="rc-modal-mode-info">
+          <span class="rc-modal-mode-name">${labelText}</span>
+          <span class="rc-modal-mode-detail">${mode.detail}</span>
+        </div>
+      `;
+
+      const controlWrap = document.createElement("div");
+      controlWrap.className = "rc-modal-mode-control";
+
+      if (qty === 0) {
+        const addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "rc-add-btn rc-add-btn--mini";
+        addBtn.textContent = "+ Agregar";
+        addBtn.addEventListener("click", () => {
+          addOrIncrementCombo(handlers, catKey, item, modes, state, mode.key, prep);
+          renderModal();
+          onChange();
+        });
+        controlWrap.appendChild(addBtn);
+      } else {
+        const qtyText = mode.unitLabel === "kg" ? `${qty} kg` : `${qty} ${qty === 1 ? "unidad" : "unidades"}`;
+        const stepper = document.createElement("div");
+        stepper.className = "rc-stepper rc-stepper--mini";
+        stepper.innerHTML = `
+          <button type="button" class="rc-step-btn rc-minus" aria-label="Restar">−</button>
+          <span class="rc-qty">${qtyText}</span>
+          <button type="button" class="rc-step-btn rc-plus" aria-label="Sumar">+</button>
+        `;
+        stepper.querySelector(".rc-minus").addEventListener("click", () => {
+          setComboQty(state, mode.key, prep, decrementRespectingMin(handlers, catKey, item, mode, prep, qty));
+          renderModal();
+          onChange();
+        });
+        stepper.querySelector(".rc-plus").addEventListener("click", () => {
+          setComboQty(state, mode.key, prep, handlers.onIncrement(catKey, item, mode.key, prep));
+          renderModal();
+          onChange();
+        });
+        controlWrap.appendChild(stepper);
+      }
+
+      row.appendChild(controlWrap);
+      return row;
+    }
+
     function renderModal() {
       modal.innerHTML = `<p class="rc-modal-title">${item.name}</p>`;
 
       modes.forEach((mode) => {
-        const qty = qtyByMode[mode.key];
-        const modeName = mode.aliasName ? `${mode.label} — ${mode.aliasName}` : mode.label;
-
-        const row = document.createElement("div");
-        row.className = "rc-modal-mode-row";
-        row.innerHTML = `
-          <div class="rc-modal-mode-info">
-            <span class="rc-modal-mode-name">${modeName}</span>
-            <span class="rc-modal-mode-detail">${mode.detail}</span>
-          </div>
-        `;
-
-        const controlWrap = document.createElement("div");
-        controlWrap.className = "rc-modal-mode-control";
-
-        if (qty === 0) {
-          const addBtn = document.createElement("button");
-          addBtn.type = "button";
-          addBtn.className = "rc-add-btn rc-add-btn--mini";
-          addBtn.textContent = "+ Agregar";
-          addBtn.addEventListener("click", () => {
-            // Se oculta el modal de detalle mientras se pregunta la preparación,
-            // para no tener dos fondos oscuros superpuestos; se restaura después.
-            overlay.style.visibility = "hidden";
-            const restore = () => (overlay.style.visibility = "");
-            withPrepStep(
-              item,
-              (preparacion) => {
-                restore();
-                qtyByMode[mode.key] = handlers.onIncrement(catKey, item, mode.key, preparacion);
-                renderModal();
-                onChange();
-              },
-              restore
-            );
-          });
-          controlWrap.appendChild(addBtn);
-        } else {
-          const qtyText = mode.unitLabel === "kg" ? `${qty} kg` : `${qty} ${qty === 1 ? "unidad" : "unidades"}`;
-          const stepper = document.createElement("div");
-          stepper.className = "rc-stepper rc-stepper--mini";
-          stepper.innerHTML = `
-            <button type="button" class="rc-step-btn rc-minus" aria-label="Restar">−</button>
-            <span class="rc-qty">${qtyText}</span>
-            <button type="button" class="rc-step-btn rc-plus" aria-label="Sumar">+</button>
-          `;
-          stepper.querySelector(".rc-minus").addEventListener("click", () => {
-            qtyByMode[mode.key] = handlers.onDecrement(catKey, item, mode.key);
-            renderModal();
-            onChange();
-          });
-          stepper.querySelector(".rc-plus").addEventListener("click", () => {
-            qtyByMode[mode.key] = handlers.onIncrement(catKey, item, mode.key);
-            renderModal();
-            onChange();
-          });
-          controlWrap.appendChild(stepper);
+        if (modes.length > 1) {
+          const modeHeader = document.createElement("p");
+          modeHeader.className = "rc-modal-mode-name";
+          modeHeader.textContent = mode.aliasName ? `${mode.label} — ${mode.aliasName}` : mode.label;
+          modal.appendChild(modeHeader);
         }
 
-        row.appendChild(controlWrap);
-        modal.appendChild(row);
+        if (!Preparation.hasChoice(item)) {
+          // Sin opciones de preparación: una sola fila simple para el modo.
+          const prep = Preparation.DEFAULT_OPTION;
+          modal.appendChild(buildRow(mode, prep, getComboQty(state, mode.key, prep), mode.label));
+          return;
+        }
+
+        const preps = state[mode.key] || {};
+        const activePreps = Object.keys(preps).filter((p) => preps[p] > 0);
+        activePreps.forEach((prep) => {
+          modal.appendChild(buildRow(mode, prep, preps[prep], prep));
+        });
+
+        const addPrepRow = document.createElement("div");
+        addPrepRow.className = "rc-modal-mode-row";
+        const addPrepBtn = document.createElement("button");
+        addPrepBtn.type = "button";
+        addPrepBtn.className = "rc-add-btn rc-add-btn--mini";
+        addPrepBtn.textContent = activePreps.length ? "+ Agregar otra preparación" : "+ Agregar";
+        addPrepBtn.addEventListener("click", () => {
+          // Se oculta el modal de detalle mientras se pregunta la preparación,
+          // para no tener dos fondos oscuros superpuestos; se restaura después.
+          overlay.style.visibility = "hidden";
+          const restore = () => (overlay.style.visibility = "");
+          withPrepStep(
+            item,
+            (preparacion) => {
+              restore();
+              addOrIncrementCombo(handlers, catKey, item, modes, state, mode.key, preparacion);
+              renderModal();
+              onChange();
+            },
+            restore
+          );
+        });
+        addPrepRow.appendChild(addPrepBtn);
+        modal.appendChild(addPrepRow);
       });
 
-      const total = modes.reduce((sum, m) => sum + qtyByMode[m.key] * m.unitPrice, 0);
+      const total = modes.reduce((sum, mode) => {
+        const preps = state[mode.key] || {};
+        return sum + Object.values(preps).reduce((s, qty) => s + qty * mode.unitPrice, 0);
+      }, 0);
       const totalLine = document.createElement("p");
       totalLine.className = "rc-modal-item-total";
       totalLine.innerHTML = `<span>Subtotal</span><span>${money(total)}</span>`;
@@ -594,39 +709,45 @@ const Cards = (function () {
     action.className = "rc-action";
     card.appendChild(action);
 
-    // Cantidad de cada modo por separado: así "Por Kilo" y "Ventana" del mismo
-    // producto pueden estar los dos puestos al mismo tiempo, aunque la card
-    // solo muestre un stepper grande a la vez (el del modo "principal").
-    const qtyByMode = {};
-    modes.forEach((m) => (qtyByMode[m.key] = 0));
+    // Cantidad de cada combinación (modo, preparación) por separado: así
+    // "Por Kilo" y "Ventana" del mismo producto pueden convivir, y dentro de
+    // un mismo modo también pueden convivir varias preparaciones (ej: un
+    // Peceto "Entera" y otro "Para milanesa"). La card solo muestra un
+    // stepper grande a la vez (el de la combinación "principal"); el resto
+    // se administra desde el modal de detalle.
+    const state = {};
+    modes.forEach((m) => (state[m.key] = {}));
 
-    // El modo principal es "pegajoso": queda siendo el que el usuario eligió
-    // en la card (no cambia solo porque se sumó el otro modo desde el modal
-    // de detalle). Si se vacía, se promueve el otro modo si todavía tiene
-    // cantidad puesta; si no queda ninguno, vuelve a "+ Agregar".
-    let primaryModeKey = modes.length === 1 ? modes[0].key : null;
+    // Si hay más de un modo, o el producto tiene opciones de preparación,
+    // puede haber más de una combinación puesta a la vez — ahí es donde
+    // tiene sentido que tocar la card abra el modal de detalle.
+    const hasMultipleCombos = modes.length > 1 || Preparation.hasChoice(item);
 
-    function resolvePrimaryMode() {
-      if (primaryModeKey && qtyByMode[primaryModeKey] > 0) return primaryModeKey;
-      const fallback = modes.find((m) => qtyByMode[m.key] > 0);
-      return fallback ? fallback.key : null;
+    // La combinación principal es "pegajosa": queda siendo la que el usuario
+    // eligió en la card (no cambia solo porque se sumó otra desde el modal
+    // de detalle). Si se vacía, se promueve cualquier otra que siga activa;
+    // si no queda ninguna, vuelve a "+ Agregar".
+    let primary = modes.length === 1 && !Preparation.hasChoice(item) ? { modeKey: modes[0].key, preparacion: Preparation.DEFAULT_OPTION } : null;
+
+    function resolvePrimary() {
+      if (primary && getComboQty(state, primary.modeKey, primary.preparacion) > 0) return primary;
+      return findAnyActiveCombo(modes, state);
     }
 
-    function addWithMode(modeKey, preparacion) {
-      primaryModeKey = modeKey;
-      qtyByMode[modeKey] = handlers.onIncrement(catKey, item, modeKey, preparacion);
+    function addCombo(modeKey, preparacion) {
+      primary = { modeKey, preparacion };
+      addOrIncrementCombo(handlers, catKey, item, modes, state, modeKey, preparacion);
       renderAction();
       pulse(card);
     }
 
     function renderAction() {
       action.innerHTML = "";
-      primaryModeKey = resolvePrimaryMode();
-      const current = primaryModeKey ? modes.find((m) => m.key === primaryModeKey) : null;
+      primary = resolvePrimary();
 
-      card.classList.toggle("rc-card--tappable", modes.length > 1 && !!current);
+      card.classList.toggle("rc-card--tappable", hasMultipleCombos && !!primary);
 
-      if (!current) {
+      if (!primary) {
         const addBtn = document.createElement("button");
         addBtn.type = "button";
         addBtn.className = "rc-add-btn";
@@ -634,18 +755,19 @@ const Cards = (function () {
         addBtn.addEventListener("click", () => {
           if (modes.length > 1) {
             openModeModal(item, modes, (modeKey) => {
-              withPrepStep(item, (preparacion) => addWithMode(modeKey, preparacion));
+              withPrepStep(item, (preparacion) => addCombo(modeKey, preparacion));
             });
           } else {
-            withPrepStep(item, (preparacion) => addWithMode(modes[0].key, preparacion));
+            withPrepStep(item, (preparacion) => addCombo(modes[0].key, preparacion));
           }
         });
         action.appendChild(addBtn);
         return;
       }
 
-      const qty = qtyByMode[current.key];
-      const qtyText = current.unitLabel === "kg" ? `${qty} kg` : `${qty} ${qty === 1 ? "unidad" : "unidades"}`;
+      const mode = modes.find((m) => m.key === primary.modeKey);
+      const qty = getComboQty(state, primary.modeKey, primary.preparacion);
+      const qtyText = mode.unitLabel === "kg" ? `${qty} kg` : `${qty} ${qty === 1 ? "unidad" : "unidades"}`;
       const stepper = document.createElement("div");
       stepper.className = "rc-stepper";
       stepper.innerHTML = `
@@ -654,11 +776,16 @@ const Cards = (function () {
         <button type="button" class="rc-step-btn rc-plus" aria-label="Sumar">+</button>
       `;
       stepper.querySelector(".rc-minus").addEventListener("click", () => {
-        qtyByMode[current.key] = handlers.onDecrement(catKey, item, current.key);
+        setComboQty(
+          state,
+          primary.modeKey,
+          primary.preparacion,
+          decrementRespectingMin(handlers, catKey, item, mode, primary.preparacion, qty)
+        );
         renderAction();
       });
       stepper.querySelector(".rc-plus").addEventListener("click", () => {
-        qtyByMode[current.key] = handlers.onIncrement(catKey, item, current.key);
+        setComboQty(state, primary.modeKey, primary.preparacion, handlers.onIncrement(catKey, item, mode.key, primary.preparacion));
         renderAction();
         pulse(card);
       });
@@ -668,12 +795,13 @@ const Cards = (function () {
     renderAction();
 
     // Una vez que ya hay algo agregado, tocar la card (fuera del selector
-    // −/+) abre el modal de detalle, con la opción de sumar el otro modo.
-    if (modes.length > 1) {
+    // −/+) abre el modal de detalle, con la opción de sumar el otro modo
+    // y/o otra preparación del mismo modo.
+    if (hasMultipleCombos) {
       card.addEventListener("click", (e) => {
-        if (!resolvePrimaryMode()) return;
+        if (!resolvePrimary()) return;
         if (e.target.closest(".rc-stepper") || e.target.closest(".rc-add-btn")) return;
-        openDetailModal(catKey, item, modes, qtyByMode, handlers, renderAction);
+        openDetailModal(catKey, item, modes, state, handlers, renderAction);
       });
     }
 

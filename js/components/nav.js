@@ -7,18 +7,36 @@ const Nav = (function () {
   const STYLE_ID = "rn-styles";
 
   const CSS = `
-    .rn-bar {
+    .rn-wrap {
       position: fixed;
       left: 50%;
       bottom: 20px;
       transform: translateX(-50%);
+      z-index: 30;
+      max-width: calc(100% - 32px);
+      transition: bottom 0.25s ease;
+    }
+
+    .rn-wrap--lifted {
+      bottom: 92px;
+    }
+
+    .rn-bar {
       display: flex;
       gap: 4px;
       padding: 6px;
       border-radius: 999px;
-      z-index: 30;
-      max-width: calc(100% - 32px);
-      transition: bottom 0.25s ease;
+      max-width: 100%;
+
+      /* Scroll horizontal "de a una": cada botón encastra en su lugar en vez
+         de quedar cortado a mitad de camino — eso es lo que se sentía mal. */
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
 
       background: transparent;
       -webkit-backdrop-filter: blur(6px) saturate(150%);
@@ -27,14 +45,51 @@ const Nav = (function () {
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
     }
 
-    .rn-bar--lifted {
-      bottom: 92px;
+    .rn-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* En mobile solo entran ~3 categorías por vez; el resto queda afuera y
+       este degradé avisa que se puede deslizar para ver las que faltan. */
+    .rn-wrap::after {
+      content: "";
+      position: absolute;
+      top: 1.5px;
+      bottom: 1.5px;
+      right: 1.5px;
+      width: 28px;
+      border-radius: 0 999px 999px 0;
+      background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.55));
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
+
+    .rn-wrap--end::after {
+      opacity: 0;
+    }
+
+    @media (max-width: 599px) {
+      .rn-wrap {
+        max-width: min(calc(100% - 32px), 300px);
+      }
+    }
+
+    @media (min-width: 600px) {
+      .rn-bar {
+        overflow: visible;
+      }
+      .rn-wrap::after {
+        display: none;
+      }
     }
 
     .rn-btn {
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-shrink: 0;
+      scroll-snap-align: start;
       border: none;
       background: transparent;
       color: #a53d57;
@@ -87,9 +142,12 @@ const Nav = (function () {
   function createNav(categories, onSelect) {
     injectStyles();
 
+    const wrap = document.createElement("div");
+    wrap.className = "rn-wrap";
+    wrap.id = "categoryNav";
+
     const nav = document.createElement("nav");
     nav.className = "rn-bar";
-    nav.id = "categoryNav";
     nav.setAttribute("aria-label", "Categorías");
 
     Object.entries(categories).forEach(([catKey, cat], index) => {
@@ -107,12 +165,22 @@ const Nav = (function () {
       nav.appendChild(btn);
     });
 
-    return nav;
+    wrap.appendChild(nav);
+
+    // Esconde el degradé de "hay más" cuando ya se llegó al final del scroll.
+    const updateEndState = () => {
+      const atEnd = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2;
+      wrap.classList.toggle("rn-wrap--end", atEnd);
+    };
+    nav.addEventListener("scroll", updateEndState, { passive: true });
+    updateEndState();
+
+    return wrap;
   }
 
   /** Levanta o baja la nav para no pisar la barra del carrito cuando está visible. */
   function setLifted(nav, lifted) {
-    nav.classList.toggle("rn-bar--lifted", lifted);
+    nav.classList.toggle("rn-wrap--lifted", lifted);
   }
 
   return { createNav, setLifted };

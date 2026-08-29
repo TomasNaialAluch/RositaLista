@@ -263,7 +263,7 @@ const Cart = (function () {
 
   const money = Pricing.money;
 
-  const cart = {}; // key: "category|name|modo" -> { qty, unitPrice, unitLabel, modeLabel, preparacion, product, category, mode }
+  const cart = {}; // key: "category|name|modo|preparacion" -> { qty, unitPrice, unitLabel, modeLabel, preparacion, product, category, mode }
   let WHATSAPP_NUMBER = "";
   let onVisibilityChange = null;
 
@@ -292,15 +292,19 @@ const Cart = (function () {
   }
 
   /**
-   * Suma/resta cantidad de un producto en un modo de venta ('kilo' | 'unidad') y devuelve la cantidad resultante.
-   * @param {string} preparacion - solo se usa al crear la línea (cantidad 0 -> 1); si la línea ya
-   *   existe, se respeta la preparación que ya tenía elegida (no se vuelve a preguntar).
+   * Suma/resta cantidad de un producto en un modo de venta ('kilo' | 'unidad') y una
+   * preparación puntual, y devuelve la cantidad resultante de esa combinación exacta.
+   *
+   * La preparación es parte de la identidad de la línea (junto con el modo): así
+   * "Peceto · unidad · Entera" y "Peceto · unidad · Para milanesa" son dos líneas
+   * independientes, cada una con su propia cantidad, en vez de una sola línea por modo.
    */
   function changeQty(catKey, item, mode, delta, preparacion) {
     const modeInfo = Pricing.getMode(item, mode);
     if (!modeInfo) return 0;
 
-    const key = `${catKey}|${item.name}|${mode}`;
+    const prep = preparacion || Preparation.DEFAULT_OPTION;
+    const key = `${catKey}|${item.name}|${mode}|${prep}`;
     const current = cart[key]?.qty || 0;
     const next = Math.max(0, current + delta);
 
@@ -312,7 +316,7 @@ const Cart = (function () {
         unitPrice: modeInfo.unitPrice,
         unitLabel: modeInfo.unitLabel,
         modeLabel: modeInfo.aliasName || modeInfo.label,
-        preparacion: cart[key]?.preparacion || preparacion || Preparation.DEFAULT_OPTION,
+        preparacion: prep,
         product: item,
         category: catKey,
         mode,
@@ -532,6 +536,6 @@ const Cart = (function () {
   return {
     init,
     increment: (catKey, item, mode, preparacion) => changeQty(catKey, item, mode, 1, preparacion),
-    decrement: (catKey, item, mode) => changeQty(catKey, item, mode, -1),
+    decrement: (catKey, item, mode, preparacion) => changeQty(catKey, item, mode, -1, preparacion),
   };
 })();

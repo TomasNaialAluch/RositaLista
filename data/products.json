@@ -5,7 +5,7 @@
       "label": "Vacuno",
       "items": [
         { "name": "Asado del Medio", "cut": "Cortes con hueso", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 19900 }, "unidad": { "precioPorKg": 18500, "pesoAproxKg": 7, "nombre": "Ventana" } }, "opcionesPreparacion": ["Cortado a banderita", "Cortado a 3 dedos", "Cortado a 5 dedos", "Solo marcado"] },
-        { "name": "Vacío", "cut": "Cortes magros", "min": "Pieza ~5 kg", "venta": { "unidad": { "precioPorKg": 19300, "pesoAproxKg": 5 }, "kilo": { "precioPorKg": 23000 } } },
+        { "name": "Vacío", "cut": "Cortes magros", "min": "Pieza ~5 kg", "venta": { "unidad": { "precioPorKg": 19300, "pesoAproxKg": 5 }, "kilo": { "precioPorKg": 23000, "minKg": 2 } } },
         { "name": "Peceto", "cut": "Para milanesa", "min": "Pieza ~2 kg", "venta": { "unidad": { "precioPorKg": 23000, "pesoAproxKg": 2 } }, "opcionesPreparacion": ["Para milanesa"] },
         { "name": "Colita de Cuadril", "cut": "Cortes magros", "min": "Pieza ~1 kg", "venta": { "unidad": { "precioPorKg": 21000, "pesoAproxKg": 1 } } },
         { "name": "Nalga", "cut": "Para milanesa", "min": "", "venta": { "kilo": { "precioPorKg": 21000 }, "unidad": { "precioPorKg": 19000, "pesoAproxKg": 5 } }, "opcionesPreparacion": ["Milanesa"] },
