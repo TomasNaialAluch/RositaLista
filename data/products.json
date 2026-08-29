@@ -16,7 +16,7 @@
         { "name": "Lomo Premium", "cut": "Cortes magros", "min": "Pieza ~2 kg", "venta": { "unidad": { "precioPorKg": 29000, "pesoAproxKg": 2 } } },
         { "name": "Ojo de Bife", "cut": "Cortes magros", "min": "Pieza ~2 kg", "venta": { "unidad": { "precioPorKg": 27000, "pesoAproxKg": 2 } }, "opcionesPreparacion": ["Cortado en churrasco"] },
         { "name": "Entraña", "cut": "Cortes magros", "min": "Pieza ~0.7 kg", "venta": { "unidad": { "precioPorKg": 29000, "pesoAproxKg": 0.7 } } },
-        { "name": "Bife de Chorizo", "cut": "Cortes magros", "min": "Pieza ~4-5 kg", "venta": { "kilo": { "precioPorKg": 26000 } } },
+        { "name": "Bife de Chorizo", "cut": "Cortes magros", "min": "Pieza ~5 kg", "venta": { "kilo": { "precioPorKg": 27000 }, "unidad": { "precioPorKg": 24000, "pesoAproxKg": 5 } }, "opcionesPreparacion": ["En churrascos", "Para milanesa"] },
         { "name": "Bife Angosto", "cut": "Cortes magros", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 24000 } }, "opcionesPreparacion": ["En churrascos"] },
         { "name": "Bife Ancho", "cut": "Cortes magros", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 20000 }, "unidad": { "precioPorKg": 20000, "pesoAproxKg": 3 } }, "opcionesPreparacion": ["En churrascos"] },
         { "name": "Picaña", "cut": "Cortes magros", "min": "Pieza ~1.5 kg", "venta": { "unidad": { "precioPorKg": 19000, "pesoAproxKg": 1.5 } } },
