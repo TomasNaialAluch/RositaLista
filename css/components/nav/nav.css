@@ -76,6 +76,17 @@
   flex-shrink: 0;
 }
 
+/* Cuando el texto no entra (ver Nav.applyIconsOnlyIfNeeded en nav.js), se
+   saca la etiqueta y el botón queda circular, solo con el ícono. */
+.rn-bar--icons-only .rn-btn {
+  gap: 0;
+  padding: 10px;
+}
+
+.rn-bar--icons-only .rn-label {
+  display: none;
+}
+
 .rn-icon svg {
   width: 100%;
   height: 100%;

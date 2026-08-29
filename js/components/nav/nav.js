@@ -55,13 +55,45 @@ const Nav = (function () {
       wrap.appendChild(dots);
     }
 
+    /**
+     * Si con el texto puesto los botones no entran en el ancho disponible,
+     * se sacan los textos y quedan solo los íconos — mismo criterio en
+     * cualquier página y en cualquier tamaño de pantalla, sin necesidad de
+     * un breakpoint fijo: no importa CUÁNTO ancho tiene el dispositivo,
+     * importa si ESTAS palabras puntuales (que varían de largo entre
+     * categorías) entran o no en ESE ancho.
+     *
+     * El "ancho disponible" hay que sacarlo del viewport (`document.
+     * documentElement.clientWidth`, menos los 16px de margen de cada lado
+     * que ya usa `.rn-wrap` en su `max-width: calc(100% - 32px)`), NO de
+     * `nav.clientWidth` ni de `wrap.clientWidth`: ninguno de los dos tiene
+     * un ancho propio independiente — `.rn-wrap` no define `width`, así
+     * que su ancho renderizado ES el ancho de `.rn-bar` adentro (se ajusta
+     * al contenido), y `.rn-bar` es justamente lo que `goToPage` anima de
+     * un lado a otro con `nav.style.width`. Comparar contra cualquiera de
+     * los dos termina siendo circular: si `nav.style.width` quedó
+     * trabado en un valor viejo (ej. a mitad de una transición, o si el
+     * `transitionend` no llegó a disparar), `wrap` hereda ese mismo ancho
+     * y la cuenta da mal. El viewport, en cambio, no depende de nada de
+     * esto — por eso es la única referencia estable.
+     */
+    function applyIconsOnlyIfNeeded() {
+      nav.classList.remove("rn-bar--icons-only");
+      const available = document.documentElement.clientWidth - 32;
+      if (nav.scrollWidth > available + 0.5) {
+        nav.classList.add("rn-bar--icons-only");
+      }
+    }
+
     function buildButtons(index) {
       nav.innerHTML = "";
       pages[index].forEach(([catKey, cat]) => {
         const btn = document.createElement("button");
         btn.className = "rn-btn" + (catKey === activeCatKey ? " rn-btn--active" : "");
         btn.dataset.target = catKey;
-        btn.innerHTML = `<span class="rn-icon">${Icons[catKey] || ""}</span><span>${cat.label}</span>`;
+        btn.setAttribute("aria-label", cat.label);
+        btn.title = cat.label;
+        btn.innerHTML = `<span class="rn-icon">${Icons[catKey] || ""}</span><span class="rn-label">${cat.label}</span>`;
 
         btn.addEventListener("click", () => {
           nav.querySelectorAll(".rn-btn").forEach((b) => b.classList.remove("rn-btn--active"));
@@ -75,6 +107,7 @@ const Nav = (function () {
       if (dots) {
         dots.querySelectorAll(".rn-dot").forEach((d, i) => d.classList.toggle("rn-dot--active", i === index));
       }
+      applyIconsOnlyIfNeeded();
     }
 
     /**
@@ -136,6 +169,16 @@ const Nav = (function () {
         startX = null;
       });
     }
+
+    // Girar el teléfono (o, en desktop, achicar la ventana) cambia cuánto
+    // ancho hay disponible — vuelve a chequear si el texto de la página
+    // actual sigue entrando. Con debounce simple porque "resize" puede
+    // disparar muchas veces seguidas mientras se gira.
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(applyIconsOnlyIfNeeded, 120);
+    });
 
     return wrap;
   }

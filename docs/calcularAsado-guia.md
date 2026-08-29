@@ -2,7 +2,7 @@
 
 **Estado: implementado (v1).** Este documento arrancó como spec antes de programar; ahora que `js/components/catalog/calcularAsado.js` existe, quedó como referencia de cómo funciona y de las decisiones que se tomaron al programarlo (marcadas explícitamente abajo, donde antes decía "falta definir"). Sigue siendo un documento vivo — si el comportamiento cambia, se actualiza acá.
 
-Este modo **todavía no usa a la Orbe** (el componente `js/components/orbe.js` de [rediseno-orbe-guia.md](rediseno-orbe-guia.md) no existe todavía) — hoy sus "cartelitos" son modales de texto plano, con el mismo patrón visual bottom-sheet que ya usa `cards.js`. Ver la sección **"Integración pendiente con la Orbe"** al final: ahí está anotado, punto por punto, qué hay que cambiar cuando se programe la Orbe.
+**Ya usa a la Orbe** (`js/components/nav/orbe.js`, ver [rediseno-orbe-guia.md](rediseno-orbe-guia.md)) en los puntos 1 a 3 de la sección **"Integración con la Orbe"** al final — se eleva sobre el modal de personas y sobre cada pregunta de la cadena final, y queda anclada con un mensaje de bienvenida mientras dura el modo. `cards.js` y `cart.js` todavía no llaman a la Orbe (puntos 4-5, sin resolver).
 
 ## La idea, en una frase
 
@@ -84,16 +84,18 @@ Por qué así: cada corte "rinde" distinto por persona (un chinchulín rinde má
 - **Embutidos**: no entran en el cálculo en vivo (no tienen `indiceAsado`) — solo se preguntan al final si el Ticket Asado no tiene ninguno. La tabla original tenía "1 unidad/persona" para embutidos, pero como se venden por kilo en `products.json` (no por unidad), no había una cantidad real con la que calcular ese índice — se optó por dejarlos fuera del contador en vez de forzar una conversión inventada.
 - **Achuras en general** (Riñón, Mondongo, Hígado): mismo criterio que embutidos, solo presencia al final. Molleja y Chinchulín son la excepción — sí tienen `indiceAsado` y sí cuentan en vivo, porque el pedido original los trató como "carne" — así que si ya se agregó Chinchulín durante el armado, la pregunta final de achuras se salta (ya hay algo de esa categoría).
 
-## Integración pendiente con la Orbe
+## Integración con la Orbe
 
-Esta sección es la que hay que releer cuando se programe `js/components/orbe.js` (ver [rediseno-orbe-guia.md](rediseno-orbe-guia.md) para el vocabulario `Orbe.elevate()` / `Orbe.dock()` / cartelito). Es una lista punto por punto de qué reemplazar en `calcularAsado.js`:
+Ver [rediseno-orbe-guia.md](rediseno-orbe-guia.md) para el vocabulario (`Orbe.elevate()` / `Orbe.dock()` / viñeta) y la tabla de estados completa. Estado de cada punto:
 
-1. **`openPeopleModal()`** — hoy es un modal de texto plano ("¿Cuántos son en el asado?"). Cuando exista la Orbe, este paso debería seguir el mismo patrón que ya usan `openModeModal`/`openPrepModal` en `cards.js`: al abrir el modal, llamar `Orbe.elevate(texto)` con la explicación de este paso puntual, y `Orbe.dock()` al cerrarlo (elegido el número o cancelado). El modal en sí (el stepper de personas) no cambia — lo que cambia es que la Orbe se posa arriba y explica.
+1. **`openPeopleModal()` — hecho.** `openSheet()` (la función compartida de la que salen `openPeopleModal` y `openYesNoModal`) recibe un tercer parámetro `orbeText` y llama `Orbe.elevate(orbeText)` al abrirse y `Orbe.dock()` al cerrarse (por cualquier camino: confirmar, cancelar, o tocar afuera — todo pasa por la misma función `finalize()` interna). El texto para este paso es `ORBE_TEXT_PEOPLE`.
 
-2. **El momento de activar el modo (paso 2 de la secuencia)** — hoy no hay ningún cartelito, el contador flotante aparece directo. Sería el lugar para un cartelito de bienvenida al modo, algo como (texto a definir con el criterio del resto de cartelitos, corto y en criollo): *"Te voy guiando: fijate cuánta carne te falta ahí a la derecha, y sumá los cortes que quieras."* Esto necesitaría que la Orbe se muestre en su estado "anclado" con este mensaje disponible al tocarla, no como un modal — ver la tabla de estados de `rediseno-orbe-guia.md` para cuál transición corresponde.
+2. **Mensaje de bienvenida al activar el modo — hecho.** `startAsadoMode()` llama `Orbe.dock(ORBE_TEXT_WELCOME)` justo después de armar el widget, dejando la Orbe anclada (círculo, sin modal) con ese mensaje disponible al tocarla. El mismo texto se vuelve a poner en `askNext()` cuando el usuario contesta "Sí" a una pregunta (para no dejar pegada la pregunta ya resuelta) y no hace falta repetirlo al cerrar cada `openYesNoModal` porque `openSheet` ya ancla sin texto (mantiene el mensaje anterior) y el siguiente paso lo pisa enseguida.
 
-3. **`openYesNoModal()`** (la cadena de embutidos/provoleta/achuras) — mismo criterio que el punto 1: `Orbe.elevate(pregunta)` al abrir cada pregunta, `Orbe.dock()` al cerrarla (sea que contestó sí, no, o cerró tocando afuera).
+3. **`openYesNoModal()` — hecho.** Mismo mecanismo que el punto 1: se le pasa la propia `pregunta` como `orbeText`.
 
-4. **El contador flotante (`.ca-widget`)** — hoy es un elemento visual sin voz. Un paso posterior (no necesariamente parte de "integrar la Orbe", pero relacionado) podría ser que tocar el contador muestre un cartelito de la Orbe explicando qué significa el número y la barra — mismo mecanismo que "tocar el orbe muestra el cartelito" ya documentado para los demás flujos.
+4. **El contador flotante (`.ca-widget`) — sin resolver.** Sigue siendo un elemento visual sin voz; tocarlo no muestra nada de la Orbe. Queda para una pasada posterior.
 
-5. **Nada de la lógica de datos cambia** — igual que aclara `rediseno-orbe-guia.md` para el resto del sitio: la Orbe es una capa visual encima de este flujo, no reemplaza `openPeopleModal`/`openYesNoModal` ni la lógica de `computeProgress`/tickets. Los modales siguen siendo los mismos, el cambio es que la Orbe se posa arriba y habla.
+5. **Nada de la lógica de datos cambió** — confirmado: `computeProgress`, el sistema de tickets y los propios modales (`openPeopleModal`/`openYesNoModal`) siguen intactos. Lo único nuevo es la Orbe posándose arriba y hablando.
+
+**Todavía sin resolver, fuera del alcance de esta pasada:** `cards.js` y `cart.js` no llaman a la Orbe — sus modales (elegir modo/preparación, detalle, "Ver pedido") abren sin que el círculo reaccione. Es la integración "general" del resto de `rediseno-orbe-guia.md`, pendiente para otra vez.

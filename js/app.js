@@ -1,11 +1,10 @@
 // Orquestador raíz: trae los datos y arma todo el árbol de la página a
-// partir de los componentes (Header, Intro, ViewToggle, Cart, Nav, Cards /
+// partir de los componentes (Header, Intro, ViewToggle, Cart, Orbe, Cards /
 // ProductList, Footer) — index.html no tiene markup propio, solo importa
 // los scripts; este archivo hace el trabajo que en una app React haría el
 // componente raíz al montarse.
 (function () {
   let PRODUCTS = {};
-  let navEl = null;
   let view = "grid"; // 'grid' | 'list' — grid es el default
   let allCollapsed = false;
   let asadoActive = false; // ver CalcularAsado — reordena las categorías mientras dura el modo
@@ -96,11 +95,10 @@
 
     document.body.appendChild(Footer.create(config.whatsappNumber, config.quienesSomos));
 
-    navEl = Nav.createNav(PRODUCTS, goToCategory);
-    document.body.appendChild(navEl);
+    Orbe.init(PRODUCTS, goToCategory);
 
     Cart.init(config, {
-      onVisibilityChange: (visible) => Nav.setLifted(navEl, visible),
+      onVisibilityChange: (visible) => Orbe.setLifted(visible),
     });
 
     renderCatalog();

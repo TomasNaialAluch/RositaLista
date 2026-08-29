@@ -1,6 +1,6 @@
 # El Orbe: guía animada que reemplaza (a veces) la nav
 
-Documento vivo — lo vamos completando juntos, flujo por flujo. Todavía no está implementado nada de esto; es la referencia para diseñarlo antes de tocar código. Cada vez que me cuentes un flujo nuevo, se agrega como una sección más abajo, sin perder lo que ya quedó definido.
+Documento vivo — lo vamos completando juntos, flujo por flujo. **El componente ya existe** (`js/components/nav/orbe.js`, CSS en `css/components/nav/orbe.css`) y está integrado en `js/components/catalog/calcularAsado.js` (ver "Integración con la Orbe" en [calcularAsado-guia.md](calcularAsado-guia.md)) — `cards.js` y `cart.js` todavía no lo llaman. Este documento sigue siendo la referencia de diseño; cada vez que me cuentes un flujo nuevo, se agrega como una sección más abajo, y cuando se programe se anota acá qué quedó implementado.
 
 ## La idea, en una frase
 
@@ -72,7 +72,7 @@ Los textos de las viñetas de cada paso del flujo (elegir modo, elegir preparaci
 - El **color de adentro del orbe** se mueve todo el tiempo, de forma suave y continua (no rebota, no tiene pausas) — es una animación aparte de la del movimiento/posición, corre siempre mientras el orbe existe, sea que esté anclado o elevado.
 - El orbe, posado arriba de un modal, **no se oscurece** como el fondo del modal (el overlay semitransparente que ya usamos en `cards.js`) — vive en el mismo plano de luz que el propio modal, por eso se lee como "parte de la conversación", no como parte del fondo.
 
-## Dónde se codearía esto (propuesta, para cuando lo armemos)
+## Dónde vive el código (implementado, v1 solo integrada con CalcularAsado)
 
 La idea central: **`Orbe` es un componente contenedor que reserva el lugar fijo de la nav en la pantalla**, y hacia adentro decide si en ese lugar corresponde dibujar la barra completa o el círculo. No son `nav.js` y un `orb.js` coordinándose por afuera — `Orbe` es el único dueño de esa posición, y es él quien llama a `Nav.createNav()` cuando corresponde mostrar la barra, o dibuja el círculo cuando no.
 

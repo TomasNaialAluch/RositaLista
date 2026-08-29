@@ -12,10 +12,12 @@
 // ticket nuevo y separado para que lo que se siga comprando ("para la
 // casa") no se mezcle con el Ticket Asado.
 //
-// TODAVÍA NO usa a la Orbe (no existe todavía — ver rediseno-orbe-guia.md):
-// los "cartelitos" de este flujo son modales de texto plano por ahora. Ver
-// la sección "Integración pendiente con la Orbe" en calcularAsado-guia.md
-// para el detalle exacto de qué hay que cambiar cuando se programe.
+// Usa a la Orbe (js/components/nav/orbe.js) en los pasos de este flujo que
+// ya estaban listados en la sección "Integración pendiente con la Orbe" de
+// docs/calcularAsado-guia.md: se eleva sobre el modal de personas y sobre
+// cada pregunta de la cadena final, y queda anclada con un mensaje de
+// bienvenida mientras dura el modo. cards.js y cart.js todavía no llaman a
+// la Orbe — eso queda para una próxima pasada.
 
 const CalcularAsado = (function () {
   const ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -39,6 +41,13 @@ const CalcularAsado = (function () {
   ];
 
   const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+  // Textos de la Orbe para este flujo — ver "Integración pendiente con la
+  // Orbe" en calcularAsado-guia.md (puntos 1 a 3).
+  const ORBE_TEXT_PEOPLE =
+    "Elegí cuántas personas van al asado — con eso te voy diciendo cuánta carne te falta a medida que sumás cortes.";
+  const ORBE_TEXT_WELCOME =
+    "Te voy guiando: fijate el contador de la derecha para ver cuánta carne te falta, y sumá los cortes que quieras desde el catálogo.";
 
   let PRODUCTS = null;
   let callbacks = {};
@@ -70,7 +79,17 @@ const CalcularAsado = (function () {
 
   // ---- Modales (bottom-sheet, mismo patrón visual que cards.js) -----------
 
-  function openSheet(bodyHtml, wire) {
+  /**
+   * @param {string} bodyHtml
+   * @param {(modal: HTMLElement, close: () => void) => void} wire
+   * @param {string} orbeText - lo que dice la Orbe mientras este modal está abierto (Orbe.elevate).
+   *   Al cerrarse (por `close()` o tocando afuera), la Orbe vuelve a anclarse sola — sin texto
+   *   forzado, así el que llama puede pisarlo después con un mensaje más específico si hace falta
+   *   (ver `ORBE_TEXT_WELCOME` en `startAsadoMode`/`askNext`).
+   */
+  function openSheet(bodyHtml, wire, orbeText) {
+    Orbe.elevate(orbeText);
+
     const overlay = document.createElement("div");
     overlay.className = "ca-modal-overlay";
 
@@ -79,11 +98,19 @@ const CalcularAsado = (function () {
     modal.innerHTML = bodyHtml;
     overlay.appendChild(modal);
 
+    let closed = false;
+    function finalize() {
+      if (closed) return;
+      closed = true;
+      overlay.remove();
+      Orbe.dock();
+    }
+
     document.body.appendChild(overlay);
-    wire(modal, () => overlay.remove());
+    wire(modal, finalize);
 
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) overlay.remove();
+      if (e.target === overlay) finalize();
     });
     return overlay;
   }
@@ -116,7 +143,8 @@ const CalcularAsado = (function () {
           close();
           onConfirm(n);
         });
-      }
+      },
+      ORBE_TEXT_PEOPLE
     );
   }
 
@@ -137,7 +165,8 @@ const CalcularAsado = (function () {
           close();
           onNo();
         });
-      }
+      },
+      pregunta
     );
   }
 
@@ -230,6 +259,11 @@ const CalcularAsado = (function () {
     buildWidget();
     unsubscribeCart = Cart.subscribe(renderWidget);
 
+    // La Orbe queda anclada (sin modal abierto) con el mensaje de
+    // bienvenida al modo — punto 2 de "Integración pendiente con la Orbe"
+    // en calcularAsado-guia.md.
+    Orbe.dock(ORBE_TEXT_WELCOME);
+
     if (callbacks.onEnter) callbacks.onEnter();
   }
 
@@ -245,6 +279,7 @@ const CalcularAsado = (function () {
       widgetEl.remove();
       widgetEl = null;
     }
+    Orbe.dock();
     if (callbacks.onExit) callbacks.onExit();
   }
 
@@ -282,6 +317,10 @@ const CalcularAsado = (function () {
     openYesNoModal(
       pregunta,
       () => {
+        // Vuelve al home en modo Asado (sigue anclada, no elevada) — que
+        // la Orbe diga de nuevo el mensaje general en vez de dejar pegada
+        // la pregunta que ya se contestó.
+        Orbe.dock(ORBE_TEXT_WELCOME);
         if (callbacks.goToCategory) callbacks.goToCategory(key);
       },
       () => askNext(faltantes, idx + 1)

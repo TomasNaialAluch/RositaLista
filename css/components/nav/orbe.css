@@ -1,0 +1,129 @@
+/* El Orbe reserva el mismo lugar que la barra (fixed, centrado abajo) —
+   ver .rn-wrap en nav.css. z-index 70: por arriba de cualquier overlay de
+   modal existente (todos usan como mucho z-index 60), porque el Orbe tiene
+   que verse "posado" sobre el modal, no tapado por su fondo oscuro. */
+.orbe-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  top: auto;
+  transform: translateX(-50%);
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: bottom 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.orbe-wrap--lifted {
+  bottom: 92px;
+}
+
+/* Elevado: se posa arriba de la pantalla en vez de abajo — mismo plano que
+   el modal (que también es z-index 60 como mucho), así no lo tapa el fondo
+   oscuro del overlay. */
+.orbe-wrap--elevated {
+  bottom: auto;
+  top: 18px;
+}
+
+.orbe-circle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  backdrop-filter: blur(10px) saturate(180%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.orbe-circle--enter {
+  animation: orbe-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes orbe-pop {
+  0% { transform: scale(0.2); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* Las manchas de color de adentro: mismo criterio que el vidrio líquido de
+   la nav vieja, pero acá el movimiento es propio (no depende de lo que hay
+   detrás) — una animación continua y suave, para que se lea como "esto
+   está vivo/trabajando", nunca se detiene mientras el Orbe existe. */
+.orbe-circle-swirl {
+  position: absolute;
+  inset: -35%;
+  display: block;
+  background:
+    radial-gradient(closest-side, rgba(255, 130, 170, 0.95), rgba(255, 130, 170, 0) 70%) 25% 30% / 55% 55% no-repeat,
+    radial-gradient(closest-side, rgba(150, 90, 230, 0.85), rgba(150, 90, 230, 0) 70%) 70% 65% / 55% 55% no-repeat,
+    radial-gradient(closest-side, rgba(255, 195, 120, 0.75), rgba(255, 195, 120, 0) 70%) 50% 85% / 45% 45% no-repeat;
+  filter: blur(5px) saturate(160%);
+  animation: orbe-swirl 6s ease-in-out infinite alternate;
+}
+
+@keyframes orbe-swirl {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate(7%, -9%) rotate(18deg) scale(1.1); }
+  100% { transform: translate(-7%, 7%) rotate(-14deg) scale(1); }
+}
+
+/* La viñeta: nace del propio círculo (globo de historieta), nunca es un
+   modal aparte. Por defecto arriba del círculo (modo anclado); si el Orbe
+   está elevado (ya cerca del techo de la pantalla) se muestra abajo para
+   no salirse de la ventana. */
+.orbe-vignette {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.85);
+  transform-origin: bottom center;
+  opacity: 0;
+  pointer-events: none;
+  width: max-content;
+  max-width: 220px;
+  background: #fff;
+  color: #2b2224;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.orbe-vignette::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: #fff;
+}
+
+.orbe-vignette--visible {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+  pointer-events: auto;
+}
+
+.orbe-wrap--elevated .orbe-vignette {
+  bottom: auto;
+  top: calc(100% + 12px);
+  transform-origin: top center;
+}
+
+.orbe-wrap--elevated .orbe-vignette::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: #fff;
+}
