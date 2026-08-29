@@ -8,7 +8,8 @@ Que cualquier cliente pueda:
 
 1. **Entrar al link** desde el celular y ver la lista de precios actualizada, organizada por Vacuno / Cerdo / Pollo.
 2. **Agregar productos** con un toque y ajustar cantidades, viendo el **total estimado** en tiempo real, sin necesidad de hacer cuentas.
-3. **Enviar el pedido por WhatsApp** con un solo toque: el botón arma automáticamente un mensaje con el detalle de los productos, las cantidades y el total, y lo abre directo en el WhatsApp de la carnicería (**+54 9 11 6624-6009**).
+3. **Completar nombre y dirección de entrega** (con timbre si hace falta) antes de enviar — son obligatorios, no deja mandar el pedido si faltan.
+4. **Enviar el pedido por WhatsApp** con un solo toque: el botón arma automáticamente un mensaje con el detalle de los productos, las cantidades, el total y los datos de entrega, y lo abre directo en el WhatsApp de la carnicería (**+54 9 11 6624-6009**).
 
 La idea es bajar la fricción entre "ver la lista" y "hacer el pedido", sin necesidad de una app ni de un sistema de pagos: todo el cierre de la venta sigue pasando por WhatsApp, como ya lo hace el negocio.
 

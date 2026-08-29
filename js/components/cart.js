@@ -156,6 +156,54 @@ const Cart = (function () {
       margin: 4px 0 16px;
     }
 
+    .cart-customer-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 4px 0 16px;
+    }
+
+    .cart-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .cart-input {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.92rem;
+      color: var(--text);
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .cart-input:focus {
+      border-color: var(--rosita-pink);
+    }
+
+    .cart-input--error {
+      border-color: #d9534f;
+    }
+
+    .cart-field-error {
+      color: #d9534f;
+      font-size: 0.72rem;
+      font-weight: 500;
+      display: none;
+    }
+
+    .cart-field--invalid .cart-field-error {
+      display: block;
+    }
+
     .cart-btn-whatsapp {
       display: flex;
       align-items: center;
@@ -310,16 +358,50 @@ const Cart = (function () {
     }
 
     const lines = entries.map((e) => `• ${lineName(e)} — ${qtyLabel(e)} (${money(e.qty * e.unitPrice)})`);
+    const name = els.customerName.value.trim();
+    const address = els.customerAddress.value.trim();
+    const bell = els.customerBell.value.trim();
+
     const message = [
       "¡Hola Rosita! 👋 Quiero hacer este pedido:",
       "",
       ...lines,
       "",
       `Total estimado: ${money(total)}`,
+      "",
+      `Nombre: ${name || "-"}`,
+      `Dirección: ${address || "-"}${bell ? ` (Timbre: ${bell})` : ""}`,
     ].join("\n");
 
     const encoded = encodeURIComponent(message);
     els.whatsappBtn.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`;
+  }
+
+  /** Marca (o limpia) el estado de error visual de un campo obligatorio. */
+  function setFieldError(fieldEl, hasError) {
+    fieldEl.classList.toggle("cart-field--invalid", hasError);
+    fieldEl.querySelector(".cart-input").classList.toggle("cart-input--error", hasError);
+  }
+
+  /**
+   * Valida que nombre y dirección estén completos antes de dejar enviar el
+   * pedido. Devuelve true si está todo OK; si falta algo, marca el/los
+   * campo(s) en rojo y hace foco en el primero que falte.
+   */
+  function validateCustomerFields() {
+    const nameOk = els.customerName.value.trim().length > 0;
+    const addressOk = els.customerAddress.value.trim().length > 0;
+
+    setFieldError(els.nameField, !nameOk);
+    setFieldError(els.addressField, !addressOk);
+
+    if (!nameOk) {
+      els.customerName.focus();
+    } else if (!addressOk) {
+      els.customerAddress.focus();
+    }
+
+    return nameOk && addressOk;
   }
 
   /** Crea el DOM del carrito (barra, modal, botón flotante) y lo agrega al body. */
@@ -350,6 +432,22 @@ const Cart = (function () {
           <strong id="modalTotal">$0</strong>
         </div>
         <p class="cart-disclaimer">* Precios y pesos aproximados. El total final puede variar según el peso real de cada pieza.</p>
+        <div class="cart-customer-fields">
+          <label class="cart-field" id="nameField">
+            <span>Nombre y apellido *</span>
+            <input type="text" id="customerName" class="cart-input" placeholder="Tu nombre">
+            <span class="cart-field-error">Falta tu nombre</span>
+          </label>
+          <label class="cart-field" id="addressField">
+            <span>Dirección de entrega *</span>
+            <input type="text" id="customerAddress" class="cart-input" placeholder="Calle, número, piso/depto">
+            <span class="cart-field-error">Falta la dirección</span>
+          </label>
+          <label class="cart-field">
+            <span>Timbre (si hace falta)</span>
+            <input type="text" id="customerBell" class="cart-input" placeholder="Ej: 3B, portero eléctrico...">
+          </label>
+        </div>
         <a id="whatsappBtn" href="#" target="_blank" rel="noopener" class="cart-btn-whatsapp">
           ${WHATSAPP_ICON_SVG.replace("<svg ", '<svg width="20" height="20" ')}
           Enviar pedido por WhatsApp
@@ -376,6 +474,11 @@ const Cart = (function () {
       modalTotal: cartModal.querySelector("#modalTotal"),
       cartItems: cartModal.querySelector("#cartItems"),
       whatsappBtn: cartModal.querySelector("#whatsappBtn"),
+      nameField: cartModal.querySelector("#nameField"),
+      addressField: cartModal.querySelector("#addressField"),
+      customerName: cartModal.querySelector("#customerName"),
+      customerAddress: cartModal.querySelector("#customerAddress"),
+      customerBell: cartModal.querySelector("#customerBell"),
     };
 
     cartBar.querySelector("#openCart").addEventListener("click", () => {
@@ -386,6 +489,20 @@ const Cart = (function () {
     });
     cartModal.addEventListener("click", (e) => {
       if (e.target === cartModal) cartModal.classList.add("hidden");
+    });
+
+    // El mensaje de WhatsApp incluye nombre/dirección/timbre, así que se
+    // reconstruye en vivo a medida que se escriben (sin tocar el estado del
+    // carrito, por eso no pasa por changeQty/updateUI acá).
+    [els.customerName, els.customerAddress, els.customerBell].forEach((input) => {
+      input.addEventListener("input", () => renderCartModal(getCartEntries(), getTotal()));
+    });
+    els.customerName.addEventListener("input", () => setFieldError(els.nameField, false));
+    els.customerAddress.addEventListener("input", () => setFieldError(els.addressField, false));
+
+    // No deja abrir WhatsApp si falta nombre o dirección.
+    els.whatsappBtn.addEventListener("click", (e) => {
+      if (!validateCustomerFields()) e.preventDefault();
     });
 
     // Botón flotante -> contacto general si el carrito está vacío, si no abre el carrito.
