@@ -5,9 +5,22 @@
 // importado por <link> en index.html.
 
 const Footer = (function () {
+  // El contenido real (foto + párrafos) es demasiado largo para una viñeta
+  // de la Orbe, así que ese texto sigue viviendo en este modal propio; la
+  // Orbe solo se eleva con un teaser corto mientras el modal está abierto,
+  // igual que hace con cualquier otro modal — ver docs/rediseno-orbe-guia.md.
+  const ORBE_TEXT_ABOUT = "Te contamos quiénes somos y de dónde viene cada corte.";
+
   function openAboutModal(quienesSomos) {
+    Orbe.elevate(ORBE_TEXT_ABOUT);
+
     const overlay = document.createElement("div");
     overlay.className = "footer-about-overlay";
+
+    function close() {
+      overlay.remove();
+      Orbe.dock();
+    }
 
     const paragraphs = (quienesSomos.parrafos || []).map((p) => `<p>${p}</p>`).join("");
     const frigorifico = quienesSomos.frigorifico
@@ -29,11 +42,11 @@ const Footer = (function () {
         ${frigorifico}
       </div>
     `;
-    modal.querySelector(".footer-about-close").addEventListener("click", () => overlay.remove());
+    modal.querySelector(".footer-about-close").addEventListener("click", close);
 
     overlay.appendChild(modal);
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) overlay.remove();
+      if (e.target === overlay) close();
     });
     document.body.appendChild(overlay);
   }

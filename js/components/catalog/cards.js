@@ -24,6 +24,14 @@
 const Cards = (function () {
   const money = Pricing.money;
 
+  // Textos de la Orbe para cada modal de este archivo — ver
+  // docs/rediseno-orbe-guia.md ("Qué dice la viñeta en cada paso").
+  const ORBE_TEXT_MODE = 'Elegí si querés que te lo corte a pedido ("Por Kilo") o llevarte la pieza entera ("Por Unidad").';
+  const ORBE_TEXT_PREP = "Elegí cómo querés que te lo entreguemos: tal cual viene, o cortado de la forma que prefieras.";
+  const ORBE_TEXT_QUANTITY = "Ajustá la cantidad con los botones, y confirmá cuando estés listo.";
+  const ORBE_TEXT_DETAIL =
+    "Acá podés sumar el otro modo de compra o agregar otra preparación de este mismo producto — se puede mezclar todo lo que quieras.";
+
   function pulse(card) {
     card.classList.add("rc-card--pulse");
     setTimeout(() => card.classList.remove("rc-card--pulse"), 220);
@@ -101,8 +109,15 @@ const Cards = (function () {
    * @param {(modeKey: string) => void} onChoose
    */
   function openModeModal(item, modes, onChoose) {
+    Orbe.elevate(ORBE_TEXT_MODE);
+
     const overlay = document.createElement("div");
     overlay.className = "rc-modal-overlay";
+
+    function close() {
+      overlay.remove();
+      Orbe.dock();
+    }
 
     const modal = document.createElement("div");
     modal.className = "rc-modal";
@@ -118,54 +133,8 @@ const Cards = (function () {
         <span class="rc-modal-option-detail">${mode.detail}</span>
       `;
       optionBtn.addEventListener("click", () => {
-        overlay.remove();
+        close();
         onChoose(mode.key);
-      });
-      modal.appendChild(optionBtn);
-    });
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.type = "button";
-    cancelBtn.className = "rc-modal-cancel";
-    cancelBtn.textContent = "Cancelar";
-    cancelBtn.addEventListener("click", () => overlay.remove());
-    modal.appendChild(cancelBtn);
-
-    overlay.appendChild(modal);
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) overlay.remove();
-    });
-    document.body.appendChild(overlay);
-  }
-
-  /**
-   * Abre un modal para elegir cómo quiere recibir la mercadería el cliente
-   * (ej: "Cortado a 3 dedos"). Solo se llama si Preparation.hasChoice(item).
-   * @param {object} item
-   * @param {(preparacion: string) => void} onChoose
-   * @param {() => void} [onCancel] - se llama si se cierra sin elegir nada
-   */
-  function openPrepModal(item, onChoose, onCancel) {
-    const overlay = document.createElement("div");
-    overlay.className = "rc-modal-overlay";
-
-    function close() {
-      overlay.remove();
-      if (onCancel) onCancel();
-    }
-
-    const modal = document.createElement("div");
-    modal.className = "rc-modal";
-    modal.innerHTML = `<p class="rc-modal-title">¿Cómo querés el corte de "${item.name}"?</p>`;
-
-    Preparation.getOptions(item).forEach((option) => {
-      const optionBtn = document.createElement("button");
-      optionBtn.type = "button";
-      optionBtn.className = "rc-modal-option";
-      optionBtn.innerHTML = `<span class="rc-modal-option-label">${option}</span>`;
-      optionBtn.addEventListener("click", () => {
-        overlay.remove();
-        onChoose(option);
       });
       modal.appendChild(optionBtn);
     });
@@ -180,6 +149,55 @@ const Cards = (function () {
     overlay.appendChild(modal);
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) close();
+    });
+    document.body.appendChild(overlay);
+  }
+
+  /**
+   * Abre un modal para elegir cómo quiere recibir la mercadería el cliente
+   * (ej: "Cortado a 3 dedos"). Solo se llama si Preparation.hasChoice(item).
+   * @param {object} item
+   * @param {(preparacion: string) => void} onChoose
+   * @param {() => void} [onCancel] - se llama si se cierra sin elegir nada
+   */
+  function openPrepModal(item, onChoose, onCancel) {
+    Orbe.elevate(ORBE_TEXT_PREP);
+
+    const overlay = document.createElement("div");
+    overlay.className = "rc-modal-overlay";
+
+    function close(cancelled) {
+      overlay.remove();
+      Orbe.dock();
+      if (cancelled && onCancel) onCancel();
+    }
+
+    const modal = document.createElement("div");
+    modal.className = "rc-modal";
+    modal.innerHTML = `<p class="rc-modal-title">¿Cómo querés el corte de "${item.name}"?</p>`;
+
+    Preparation.getOptions(item).forEach((option) => {
+      const optionBtn = document.createElement("button");
+      optionBtn.type = "button";
+      optionBtn.className = "rc-modal-option";
+      optionBtn.innerHTML = `<span class="rc-modal-option-label">${option}</span>`;
+      optionBtn.addEventListener("click", () => {
+        close(false);
+        onChoose(option);
+      });
+      modal.appendChild(optionBtn);
+    });
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "rc-modal-cancel";
+    cancelBtn.textContent = "Cancelar";
+    cancelBtn.addEventListener("click", () => close(true));
+    modal.appendChild(cancelBtn);
+
+    overlay.appendChild(modal);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(true);
     });
     document.body.appendChild(overlay);
   }
@@ -220,9 +238,15 @@ const Cards = (function () {
    */
   function openQuantityModal(catKey, item, modes, state, handlers, modeKey, preparacion, onChange) {
     const mode = modes.find((m) => m.key === modeKey);
+    Orbe.elevate(ORBE_TEXT_QUANTITY);
 
     const overlay = document.createElement("div");
     overlay.className = "rc-modal-overlay";
+
+    function close() {
+      overlay.remove();
+      Orbe.dock();
+    }
 
     const modal = document.createElement("div");
     modal.className = "rc-modal";
@@ -254,7 +278,7 @@ const Cards = (function () {
         setComboQty(state, modeKey, preparacion, newQty);
         onChange();
         if (newQty === 0) {
-          overlay.remove();
+          close();
           return;
         }
         render();
@@ -275,13 +299,13 @@ const Cards = (function () {
       confirmBtn.type = "button";
       confirmBtn.className = "rc-add-btn";
       confirmBtn.textContent = "Agregar al carrito";
-      confirmBtn.addEventListener("click", () => overlay.remove());
+      confirmBtn.addEventListener("click", close);
       modal.appendChild(confirmBtn);
     }
 
     render();
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) overlay.remove();
+      if (e.target === overlay) close();
     });
     document.body.appendChild(overlay);
   }
@@ -301,8 +325,15 @@ const Cards = (function () {
    * @param {() => void} onChange - se llama después de cada cambio (para refrescar la card de atrás)
    */
   function openDetailModal(catKey, item, modes, state, handlers, onChange) {
+    Orbe.elevate(ORBE_TEXT_DETAIL);
+
     const overlay = document.createElement("div");
     overlay.className = "rc-modal-overlay";
+
+    function close() {
+      overlay.remove();
+      Orbe.dock();
+    }
 
     const modal = document.createElement("div");
     modal.className = "rc-modal";
@@ -392,7 +423,10 @@ const Cards = (function () {
           // Se oculta el modal de detalle mientras se pregunta la preparación,
           // para no tener dos fondos oscuros superpuestos; se restaura después.
           overlay.style.visibility = "hidden";
-          const restore = () => (overlay.style.visibility = "");
+          const restore = () => {
+            overlay.style.visibility = "";
+            Orbe.elevate(ORBE_TEXT_DETAIL);
+          };
           withPrepStep(
             item,
             (preparacion) => {
@@ -421,13 +455,13 @@ const Cards = (function () {
       closeBtn.type = "button";
       closeBtn.className = "rc-modal-cancel";
       closeBtn.textContent = "Listo";
-      closeBtn.addEventListener("click", () => overlay.remove());
+      closeBtn.addEventListener("click", close);
       modal.appendChild(closeBtn);
     }
 
     renderModal();
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) overlay.remove();
+      if (e.target === overlay) close();
     });
     document.body.appendChild(overlay);
   }

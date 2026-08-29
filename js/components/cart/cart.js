@@ -24,6 +24,10 @@ const Cart = (function () {
   const money = Pricing.money;
   const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
+  // Texto de la Orbe al abrir "Ver pedido" — ver docs/rediseno-orbe-guia.md.
+  const ORBE_TEXT_CART =
+    "Repasá lo que agregaste, completá tus datos de entrega, y mandalo por WhatsApp cuando esté listo.";
+
   let onVisibilityChange = null;
   let els = {}; // referencias a los elementos creados por buildDOM()
   let editingTicketId = null; // qué chip de "Mis pedidos" está en modo renombrar, si alguno
@@ -405,19 +409,25 @@ const Cart = (function () {
       customerBell: cartModal.querySelector("#customerBell"),
     };
 
-    cartBar.querySelector("#openCart").addEventListener("click", () => {
+    function openCartModal() {
       cartModal.classList.remove("hidden");
-    });
-    cartModal.querySelector("#closeCart").addEventListener("click", () => {
+      Orbe.elevate(ORBE_TEXT_CART);
+    }
+    function closeCartModal() {
       cartModal.classList.add("hidden");
-    });
+      Orbe.dock();
+    }
+
+    cartBar.querySelector("#openCart").addEventListener("click", openCartModal);
+    cartModal.querySelector("#closeCart").addEventListener("click", closeCartModal);
     cartModal.addEventListener("click", (e) => {
-      if (e.target === cartModal) cartModal.classList.add("hidden");
+      if (e.target === cartModal) closeCartModal();
     });
     SwipeToClose.attach({
       overlay: cartModal,
       content: cartModal.querySelector(".cart-modal-content"),
       handle: cartModal.querySelector(".cart-modal-handle"),
+      onClose: () => Orbe.dock(),
     });
 
     els.newTicketBtn.addEventListener("click", () => {
@@ -488,7 +498,10 @@ const Cart = (function () {
      */
     refresh: updateUI,
     /** Abre el modal del pedido (mismo efecto que tocar "Ver pedido"). */
-    openModal: () => els.cartModal.classList.remove("hidden"),
+    openModal: () => {
+      els.cartModal.classList.remove("hidden");
+      Orbe.elevate(ORBE_TEXT_CART);
+    },
     /**
      * Se llama cada vez que cambia algo del carrito (agregar/sacar
      * productos, crear/borrar/renombrar tickets). Devuelve una función para

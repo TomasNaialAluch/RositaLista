@@ -2,7 +2,7 @@
 
 **Estado: implementado (v1).** Este documento arrancó como spec antes de programar; ahora que `js/components/catalog/calcularAsado.js` existe, quedó como referencia de cómo funciona y de las decisiones que se tomaron al programarlo (marcadas explícitamente abajo, donde antes decía "falta definir"). Sigue siendo un documento vivo — si el comportamiento cambia, se actualiza acá.
 
-**Ya usa a la Orbe** (`js/components/nav/orbe.js`, ver [rediseno-orbe-guia.md](rediseno-orbe-guia.md)) en los puntos 1 a 3 de la sección **"Integración con la Orbe"** al final — se eleva sobre el modal de personas y sobre cada pregunta de la cadena final, y queda anclada con un mensaje de bienvenida mientras dura el modo. `cards.js` y `cart.js` todavía no llaman a la Orbe (puntos 4-5, sin resolver).
+**Ya usa a la Orbe** (`js/components/nav/orbe.js`, ver [rediseno-orbe-guia.md](rediseno-orbe-guia.md)) en los puntos 1 a 3 de la sección **"Integración con la Orbe"** al final — se eleva sobre el modal de personas y sobre cada pregunta de la cadena final, y queda anclada con un mensaje de bienvenida mientras dura el modo. `cards.js` y `cart.js` también llaman a la Orbe ahora (sus propios modales de elegir modo/preparación/cantidad, detalle, y "Ver pedido") — ver el estado completo en [rediseno-orbe-guia.md](rediseno-orbe-guia.md).
 
 ## La idea, en una frase
 
@@ -98,4 +98,4 @@ Ver [rediseno-orbe-guia.md](rediseno-orbe-guia.md) para el vocabulario (`Orbe.el
 
 5. **Nada de la lógica de datos cambió** — confirmado: `computeProgress`, el sistema de tickets y los propios modales (`openPeopleModal`/`openYesNoModal`) siguen intactos. Lo único nuevo es la Orbe posándose arriba y hablando.
 
-**Todavía sin resolver, fuera del alcance de esta pasada:** `cards.js` y `cart.js` no llaman a la Orbe — sus modales (elegir modo/preparación, detalle, "Ver pedido") abren sin que el círculo reaccione. Es la integración "general" del resto de `rediseno-orbe-guia.md`, pendiente para otra vez.
+**Actualización:** `cards.js` (elegir modo, elegir preparación, ajustar cantidad, detalle) y `cart.js` ("Ver pedido") ya llaman a la Orbe — ver la sección de arquitectura de [rediseno-orbe-guia.md](rediseno-orbe-guia.md) para el detalle. Lo único que sigue sin resolver es el punto 4 de arriba (el contador flotante).
