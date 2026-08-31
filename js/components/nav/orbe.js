@@ -6,11 +6,17 @@
 // (delegando en Nav.createNav) o el círculo animado. No son dos elementos
 // coordinándose por afuera: Orbe es el único dueño de esa posición.
 //
-// Integración actual (v1): solo `js/components/catalog/calcularAsado.js`
-// llama a Orbe.elevate()/Orbe.dock() por ahora (ver la sección "Integración
-// pendiente con la Orbe" en docs/calcularAsado-guia.md). cards.js y cart.js
-// todavía no están conectados — sus modales abren sin que el Orbe reaccione,
-// eso queda para una próxima pasada.
+// Integración: calcularAsado.js, cards.js, cart.js y footer.js llaman a
+// Orbe.elevate()/Orbe.dock() (ver docs/rediseno-orbe-guia.md).
+//
+// "Posado arriba del modal" (elevate()) no es una posición fija en pantalla:
+// los modales son bottom-sheets de altura variable (ver *-modal.css), así
+// que cada vez que se eleva, el Orbe busca el modal realmente visible en ese
+// momento (ver MODAL_SELECTOR/findVisibleModal) y se ubica con margen justo
+// arriba de su borde superior — no en un `top` fijo, que quedaría flotando
+// lejos del modal (o encima del logo) cuando el modal es chico. Se
+// re-mide con ResizeObserver porque el contenido del modal puede crecer
+// (ej: "+ Agregar otra preparación" en cards.js) mientras sigue abierto.
 
 const Orbe = (function () {
   const DEFAULT_MESSAGE = "Tocame cuando quieras que te explique qué está pasando acá.";
@@ -27,6 +33,92 @@ const Orbe = (function () {
   let message = DEFAULT_MESSAGE;
   let vignetteOpen = false;
   let scrollBound = false;
+
+  // Selectores de la "hoja" de cada modal de la app (no el overlay que la
+  // envuelve) — uno por cada CSS autocontenido (cards.js/calcularAsado.js/
+  // cart.js/footer.js siguen el mismo patrón de bottom-sheet a propósito,
+  // ver comentario en cada *.css). Se usa para encontrar, en cada elevate(),
+  // el modal que está realmente en pantalla y posarse arriba de él.
+  const MODAL_SELECTOR = ".rc-modal, .ca-modal, .rl-modal, .cart-modal-content, .footer-about-modal";
+  const ELEVATE_MARGIN = 14; // separación entre el borde de abajo del Orbe y el borde de arriba del modal
+  const ELEVATE_MIN_TOP = 12; // no dejar que se pegue al borde superior de la ventana en modales muy altos
+
+  let modalObserver = null; // ResizeObserver del modal actualmente trackeado
+  let trackedModal = null;
+  let repositionHandle = null;
+
+  /** Busca la "hoja" del modal realmente visible (no el overlay que la envuelve). */
+  function findVisibleModal() {
+    const candidates = document.querySelectorAll(MODAL_SELECTOR);
+    let found = null;
+    candidates.forEach((el) => {
+      const style = getComputedStyle(el);
+      if (style.visibility === "hidden" || style.display === "none") return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      // Si hay más de un candidato válido (p.ej. modal de detalle + modal de
+      // preparación anidado), el último en orden de DOM es el más reciente.
+      found = el;
+    });
+    return found;
+  }
+
+  /** Deja de trackear el modal actual (al cerrarlo, anclar, o desmontar el círculo). */
+  function stopTracking() {
+    if (repositionHandle !== null) {
+      cancelAnimationFrame(repositionHandle);
+      repositionHandle = null;
+    }
+    if (modalObserver) {
+      modalObserver.disconnect();
+      modalObserver = null;
+    }
+    trackedModal = null;
+    if (circleWrap) circleWrap.style.removeProperty("--orbe-elevated-top");
+  }
+
+  /** Mide el modal visible y posiciona el círculo elevado con margen justo arriba. */
+  function positionAboveModal() {
+    if (!circleWrap || position !== "elevated") return;
+    const modalEl = findVisibleModal();
+    if (modalEl !== trackedModal) {
+      if (modalObserver) modalObserver.disconnect();
+      trackedModal = modalEl;
+      if (modalEl) {
+        modalObserver = new ResizeObserver(() => positionAboveModal());
+        modalObserver.observe(modalEl);
+      } else {
+        modalObserver = null;
+      }
+    }
+    if (!modalEl) {
+      circleWrap.style.removeProperty("--orbe-elevated-top");
+      return;
+    }
+    const modalTop = modalEl.getBoundingClientRect().top;
+    const circle = circleWrap.querySelector(".orbe-circle");
+    const circleHeight = circle ? circle.offsetHeight : 54;
+    const top = Math.max(ELEVATE_MIN_TOP, modalTop - circleHeight - ELEVATE_MARGIN);
+    circleWrap.style.setProperty("--orbe-elevated-top", `${top}px`);
+  }
+
+  /** Programa una medición para el próximo frame (el modal ya está en el DOM para entonces). */
+  function scheduleReposition() {
+    if (repositionHandle !== null) cancelAnimationFrame(repositionHandle);
+    repositionHandle = requestAnimationFrame(() => {
+      repositionHandle = null;
+      positionAboveModal();
+    });
+  }
+
+  let resizeBound = false;
+  function ensureResizeListener() {
+    if (resizeBound) return;
+    resizeBound = true;
+    window.addEventListener("resize", () => {
+      if (position === "elevated") positionAboveModal();
+    });
+  }
 
   function onScroll() {
     if (mode === "circle" && position === "anchored") {
@@ -81,6 +173,7 @@ const Orbe = (function () {
   }
 
   function removeCurrent() {
+    stopTracking();
     if (navEl) {
       navEl.remove();
       navEl = null;
@@ -121,11 +214,17 @@ const Orbe = (function () {
     vignetteOpen = false;
     applyPositionClasses();
     renderVignette();
+    ensureResizeListener();
+    // El modal recién se termina de armar/appendear en la misma llamada
+    // síncrona que disparó este elevate() — para el próximo frame ya está
+    // en el DOM, así que ahí recién se puede medir dónde quedó su borde.
+    scheduleReposition();
   }
 
   /** Vuelve a anclar el Orbe (círculo solo, sin modal), después de cerrar uno. */
   function dock(text) {
     if (text) message = text;
+    stopTracking();
     mountCircleIfNeeded();
     position = "anchored";
     vignetteOpen = false;

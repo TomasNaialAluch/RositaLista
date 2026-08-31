@@ -1,0 +1,29 @@
+{
+  "vacuno": [
+    "Asado del Medio",
+    "Bife de Chorizo",
+    "Vacío",
+    "Bife Ancho",
+    "Ojo de Bife",
+    "Colita de Cuadril",
+    "Entraña",
+    "Matambre",
+    "Bife Angosto",
+    "Picaña",
+    "Lomo Premium",
+    "Palomita"
+  ],
+  "cerdo": [
+    "Matambrito de Cerdo",
+    "Bondiola",
+    "Pechito de Cerdo",
+    "Ribs",
+    "Carré de Cerdo",
+    "Churrasquito"
+  ],
+  "achuras": [
+    "Molleja",
+    "Chinchulín",
+    "Riñón"
+  ]
+}

@@ -149,6 +149,21 @@ const CartState = (function () {
     return next;
   }
 
+  /**
+   * Cantidad ya puesta de un producto+modo+preparación puntual, sobre el
+   * TICKET ACTIVO — para que las cards (cards.js/productList.js) puedan
+   * arrancar su estado visual reflejando lo que ya hay en el carrito, en
+   * vez de arrancar siempre en 0 (eso rompía cuando algo agregaba
+   * cantidades directo por CartState.changeQty, como CalcularAsado con
+   * embutidos/achuras/provoleta, en vez de por los botones +/− de la card).
+   */
+  function getLineQty(catKey, item, mode, preparacion) {
+    const prep = preparacion || Preparation.DEFAULT_OPTION;
+    const key = `${catKey}|${item.name}|${mode}|${prep}`;
+    const line = tickets[activeTicketId]?.lines[key];
+    return line ? line.qty : 0;
+  }
+
   // ---- Lectura de líneas / totales ------------------------------------------
 
   function getTicketEntries(ticketId) {
@@ -226,6 +241,7 @@ const CartState = (function () {
     deleteTicket,
     applySplit,
     changeQty,
+    getLineQty,
 
     getActiveTicketId: () => activeTicketId,
     setActiveTicketId: (id) => {

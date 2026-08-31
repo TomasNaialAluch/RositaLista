@@ -1,0 +1,29 @@
+/* Fila de chips, entre .catalog-toolbar y #catalog (ver app.js) — solo
+   existe montada mientras dura el modo Asado. */
+.asado-filter {
+  display: flex;
+  gap: 8px;
+  max-width: 780px;
+  margin: 0 auto 14px;
+  padding: 0 16px;
+  flex-wrap: wrap;
+}
+
+.asado-filter-chip {
+  border: 1.5px solid var(--rosita-pink);
+  background: #fff;
+  color: var(--rosita-pink-dark);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.asado-filter-chip--active {
+  background: var(--rosita-pink-dark);
+  border-color: var(--rosita-pink-dark);
+  color: #fff;
+}

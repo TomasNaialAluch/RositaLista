@@ -12,12 +12,34 @@
 // ticket nuevo y separado para que lo que se siga comprando ("para la
 // casa") no se mezcle con el Ticket Asado.
 //
+// Embutidos, achuras y provoleta (ver docs/rediseno-embutidos-asado.md) no
+// solo preguntan sí/no: decir que sí agrega algo directo al Ticket Asado en
+// vez de solo navegar a la categoría. Embutidos y achuras además ponen las
+// cards de esa categoría en "modo selección" (Cards.enterSelectionMode) con
+// una cantidad de referencia por persona (1 unidad/persona para embutidos,
+// indiceAsado×personas kg o 1 pieza entera para achuras) — ver
+// buildEmbutidosController/buildAchurasController más abajo. Provoleta, al
+// ser un solo producto, no necesita modo selección: se agrega directo la
+// cantidad sugerida (`startProvoletaAdd`). El modo selección solo funciona
+// en vista Grilla: en vista Lista (ProductList) la categoría se ve y se
+// agrega normal, sin el toggle de selección — límite conocido, no resuelto
+// en esta v1.
+//
+// El modo también coordina con AsadoFilter (js/components/catalog/
+// asadoFilter.js, ver docs/rediseno-filtro-cortes-asado.md), los chips
+// "Cortes de asado"/"Ver todos los cortes" que app.js monta/desmonta en
+// onEnter/onExit: CalcularAsado no controla los chips en el día a día (eso
+// es cosa de app.js), pero sí fuerza "Ver todos" al entrar al modo
+// selección de Achuras (`startAchurasSelection`), porque Mondongo/Hígado
+// quedan fuera del filtro "Cortes de asado" y si no se ven no se pueden
+// elegir.
+//
 // Usa a la Orbe (js/components/nav/orbe.js) en los pasos de este flujo que
 // ya estaban listados en la sección "Integración pendiente con la Orbe" de
 // docs/calcularAsado-guia.md: se eleva sobre el modal de personas y sobre
 // cada pregunta de la cadena final, y queda anclada con un mensaje de
-// bienvenida mientras dura el modo. cards.js y cart.js todavía no llaman a
-// la Orbe — eso queda para una próxima pasada.
+// bienvenida mientras dura el modo. cards.js y cart.js también llaman a la
+// Orbe (elegir modo/preparación/cantidad, detalle, y "Ver pedido").
 
 const CalcularAsado = (function () {
   const ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -48,6 +70,14 @@ const CalcularAsado = (function () {
     "Elegí cuántas personas van al asado — con eso te voy diciendo cuánta carne te falta a medida que sumás cortes.";
   const ORBE_TEXT_WELCOME =
     "Te voy guiando: fijate el contador de la derecha para ver cuánta carne te falta, y sumá los cortes que quieras desde el catálogo.";
+
+  // Modo selección de embutidos/achuras — ver docs/rediseno-embutidos-asado.md.
+  const CHORIZO_DEFAULT_NAME = "Chorizo Puro Cerdo";
+  const PROVOLETA_NAME = "Provoleta";
+  // Achuras que se venden como pieza entera: seleccionarlas agrega 1 pieza
+  // (no una fracción en kg) — el resto de la categoría se vende por kilo y
+  // usa `indiceAsado × personas`, igual que ya hace el contador de carne.
+  const ACHURA_PIEZA_ENTERA = new Set(["Mondongo", "Hígado"]);
 
   let PRODUCTS = null;
   let callbacks = {};
@@ -117,13 +147,13 @@ const CalcularAsado = (function () {
 
   /** Primer paso del flujo: cuántas personas van al asado. */
   function openPeopleModal(onConfirm) {
-    let n = 4;
+    let n = 8;
     openSheet(
       `
       <p class="ca-modal-title">¿Cuántos son en el asado?</p>
       <div class="ca-stepper">
         <button type="button" class="ca-step-btn ca-minus" aria-label="Restar">−</button>
-        <span class="ca-qty" id="caPeopleQty">4 personas</span>
+        <span class="ca-qty" id="caPeopleQty">8 personas</span>
         <button type="button" class="ca-step-btn ca-plus" aria-label="Sumar">+</button>
       </div>
       <button type="button" class="ca-confirm-btn" id="caPeopleConfirm">Empezar</button>
@@ -167,6 +197,106 @@ const CalcularAsado = (function () {
         });
       },
       pregunta
+    );
+  }
+
+  // ---- Selección de embutidos/achuras (ver docs/rediseno-embutidos-asado.md) --
+
+  function findItem(catKey, name) {
+    const cat = PRODUCTS[catKey];
+    return cat ? cat.items.find((i) => i.name === name) : null;
+  }
+
+  /** Cantidad ya puesta en el Ticket Asado de un producto en un modo puntual (prep siempre default acá). */
+  function ticketQtyFor(item, mode) {
+    const entry = CartState.getTicketEntries(asadoTicketId).find(
+      (e) => e.product.name === item.name && e.mode === mode && e.preparacion === Preparation.DEFAULT_OPTION
+    );
+    return entry ? entry.qty : 0;
+  }
+
+  /** Embutidos: seleccionar agrega/saca `personas` unidades de una sola vez. */
+  function buildEmbutidosController() {
+    return {
+      isSelected: (item) => ticketQtyFor(item, "unidad") > 0,
+      toggle: (item) => {
+        const current = ticketQtyFor(item, "unidad");
+        CartState.changeQty("embutidos", item, "unidad", current > 0 ? -current : personas);
+        Cart.refresh();
+      },
+    };
+  }
+
+  /**
+   * Achuras: lo que se vende por kilo (Molleja/Chinchulín/Riñón) agrega
+   * `indiceAsado × personas` kg al seleccionar — misma cuenta que ya hace el
+   * contador de carne. Lo que se vende como pieza entera (Mondongo/Hígado)
+   * agrega 1 pieza, porque no se puede comprar una fracción.
+   */
+  function buildAchurasController() {
+    return {
+      isSelected: (item) => {
+        const mode = ACHURA_PIEZA_ENTERA.has(item.name) ? "unidad" : "kilo";
+        return ticketQtyFor(item, mode) > 0;
+      },
+      toggle: (item) => {
+        if (ACHURA_PIEZA_ENTERA.has(item.name)) {
+          const current = ticketQtyFor(item, "unidad");
+          CartState.changeQty("achuras", item, "unidad", current > 0 ? -current : 1);
+        } else {
+          const current = ticketQtyFor(item, "kilo");
+          const targetKg = round2((item.indiceAsado || 0) * personas);
+          CartState.changeQty("achuras", item, "kilo", current > 0 ? -current : targetKg);
+        }
+        Cart.refresh();
+      },
+    };
+  }
+
+  /** "Sí" a "¿Querés agregar embutidos?": suma el chorizo default y activa el modo selección. */
+  function startEmbutidosSelection() {
+    const chorizo = findItem("embutidos", CHORIZO_DEFAULT_NAME);
+    if (chorizo) {
+      CartState.changeQty("embutidos", chorizo, "unidad", personas);
+      Cart.refresh();
+    }
+    Cards.enterSelectionMode("embutidos", buildEmbutidosController());
+    if (callbacks.refreshCatalog) callbacks.refreshCatalog();
+    if (callbacks.goToCategory) callbacks.goToCategory("embutidos");
+    Orbe.dock(
+      `Ya sumamos ${personas} ${chorizo ? "chorizos" : "unidades"}, 1 por persona. Elegí qué otros embutidos querés agregar — cada uno se suma también a razón de 1 por persona.`
+    );
+  }
+
+  /** "Sí" a "¿Querés agregar achuras?": sin default, solo activa el modo selección. */
+  function startAchurasSelection() {
+    // El filtro "Cortes de asado" (ver docs/rediseno-filtro-cortes-asado.md)
+    // saca Mondongo/Hígado de la vista — si siguiera activo acá, el usuario
+    // no podría verlos ni elegirlos. Se fuerza "Ver todos" para este paso.
+    AsadoFilter.showAll();
+    Cards.enterSelectionMode("achuras", buildAchurasController());
+    if (callbacks.refreshCatalog) callbacks.refreshCatalog();
+    if (callbacks.goToCategory) callbacks.goToCategory("achuras");
+    Orbe.dock("Elegí qué achuras querés agregar — cada una se suma a razón de lo que come una persona en promedio.");
+  }
+
+  /**
+   * "Sí" a "¿Querés agregar provoleta?": a diferencia de embutidos/achuras,
+   * hay un solo producto — no hace falta modo selección, se agrega directo
+   * la cantidad sugerida (misma cuenta que ya muestra el contador flotante:
+   * `Math.ceil(personas / 2)`, 1 cada 2 personas).
+   */
+  function startProvoletaAdd() {
+    const provoleta = findItem("provoleta", PROVOLETA_NAME);
+    const sugerida = Math.ceil(personas / 2);
+    if (provoleta) {
+      CartState.changeQty("provoleta", provoleta, "unidad", sugerida);
+      Cart.refresh();
+    }
+    if (callbacks.refreshCatalog) callbacks.refreshCatalog();
+    if (callbacks.goToCategory) callbacks.goToCategory("provoleta");
+    Orbe.dock(
+      `Ya sumamos ${sugerida} ${sugerida === 1 ? "provoleta" : "provoletas"} — 1 cada 2 personas. Podés ajustar la cantidad tocando la card.`
     );
   }
 
@@ -279,6 +409,10 @@ const CalcularAsado = (function () {
       widgetEl.remove();
       widgetEl = null;
     }
+    // Por si se sale del modo con el selector de embutidos/achuras todavía
+    // activo (ver docs/rediseno-embutidos-asado.md) — las cards normales no
+    // deben quedar en modo selección fuera de CalcularAsado.
+    Cards.clearSelectionMode();
     Orbe.dock();
     if (callbacks.onExit) callbacks.onExit();
   }
@@ -295,6 +429,11 @@ const CalcularAsado = (function () {
 
   /** Botón "Terminar pedido" del widget: dispara la cadena de preguntas del final. */
   function startFinishFlow() {
+    // Si venía del modo selección de embutidos/achuras, se apaga acá — el
+    // usuario ya terminó de elegir (docs/rediseno-embutidos-asado.md).
+    Cards.clearSelectionMode();
+    if (callbacks.refreshCatalog) callbacks.refreshCatalog();
+
     const entries = CartState.getTicketEntries(asadoTicketId);
     const yaTiene = new Set(entries.map((e) => e.category));
     const faltantes = CHECKLIST_FINAL.filter((c) => PRODUCTS[c.key] && !yaTiene.has(c.key));
@@ -317,6 +456,21 @@ const CalcularAsado = (function () {
     openYesNoModal(
       pregunta,
       () => {
+        // Embutidos, achuras y provoleta tienen su propio flujo — ver
+        // docs/rediseno-embutidos-asado.md. Ninguno de los tres se queda
+        // con el comportamiento genérico de "solo navegar a la categoría".
+        if (key === "embutidos") {
+          startEmbutidosSelection();
+          return;
+        }
+        if (key === "achuras") {
+          startAchurasSelection();
+          return;
+        }
+        if (key === "provoleta") {
+          startProvoletaAdd();
+          return;
+        }
         // Vuelve al home en modo Asado (sigue anclada, no elevada) — que
         // la Orbe diga de nuevo el mensaje general en vez de dejar pegada
         // la pregunta que ya se contestó.
@@ -343,6 +497,7 @@ const CalcularAsado = (function () {
    * @param {() => void} cbs.onEnter - se llama al prender el modo (app.js reordena el catálogo)
    * @param {() => void} cbs.onExit - se llama al apagar el modo (app.js vuelve al orden normal)
    * @param {(catKey: string) => void} cbs.goToCategory - llevar al usuario a una categoría puntual
+   * @param {() => void} cbs.refreshCatalog - re-renderiza el catálogo (para que el modo selección de Cards se refleje)
    * @returns {HTMLElement} el botón, para sumarlo a la toolbar
    */
   function create(products, cbs) {

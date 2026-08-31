@@ -166,6 +166,8 @@
   border-radius: 20px 20px 0 0;
   padding: 20px;
   box-sizing: border-box;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 @media (min-width: 640px) {
@@ -283,6 +285,39 @@
 
 .rc-stepper--mini .rc-qty {
   font-size: 0.72rem;
+}
+
+/* Modo selección (CalcularAsado, embutidos/achuras — ver
+   docs/rediseno-embutidos-asado.md): el botón deja de ser "Agregar" y pasa a
+   ser un toggle; la card seleccionada se marca con un contorno destacado en
+   vez de mostrar un stepper, para que sea obvio cuáles ya están elegidas. */
+.rc-card--selected {
+  outline: 2.5px solid #a53d57;
+  outline-offset: -2.5px;
+  background: #fdf4f6;
+}
+
+.rc-select-btn {
+  width: 100%;
+  border: 1.5px solid #c14f6b;
+  background: #fff;
+  color: #a53d57;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 8px 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.rc-select-btn:active {
+  transform: scale(0.96);
+}
+
+.rc-select-btn--selected {
+  border-color: #a53d57;
+  background: #a53d57;
+  color: #fff;
 }
 
 .rc-modal-item-total {

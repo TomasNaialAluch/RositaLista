@@ -490,6 +490,8 @@ const Cart = (function () {
       updateUI();
       return qty;
     },
+    /** Cantidad ya puesta de una combinación — para que las cards arranquen su estado visual en sync con el carrito. */
+    getQty: (catKey, item, mode, preparacion) => CartState.getLineQty(catKey, item, mode, preparacion),
     /**
      * Refresca toda la UI del carrito (barra + modal) sin cambiar cantidades.
      * Hace falta cuando algo externo mueve el estado directamente en

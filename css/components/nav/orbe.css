@@ -19,12 +19,16 @@
   bottom: 92px;
 }
 
-/* Elevado: se posa arriba de la pantalla en vez de abajo — mismo plano que
-   el modal (que también es z-index 60 como mucho), así no lo tapa el fondo
-   oscuro del overlay. */
+/* Elevado: se posa arriba del modal que esté abierto, no en un punto fijo
+   de la pantalla — el modal es un bottom-sheet de altura variable, así que
+   orbe.js mide su borde superior real y lo escribe acá vía
+   --orbe-elevated-top (ver positionAboveModal en orbe.js). El 18px es solo
+   el fallback del primer frame, antes de que se pueda medir. Mismo plano
+   que el modal (que también es z-index 60 como mucho), así no lo tapa el
+   fondo oscuro del overlay. */
 .orbe-wrap--elevated {
   bottom: auto;
-  top: 18px;
+  top: var(--orbe-elevated-top, 18px);
 }
 
 .orbe-circle {

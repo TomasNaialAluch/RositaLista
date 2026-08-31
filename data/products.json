@@ -48,20 +48,20 @@
     "embutidos": {
       "label": "Embutidos",
       "items": [
-        { "name": "Chorizo Puro Cerdo", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 6500 } } },
-        { "name": "Chorizo Puro Cerdo Premium", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 10500 } } },
-        { "name": "Chorizo Puro Cerdo c/ Morrón", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 10500 } } },
-        { "name": "Morcilla Tipo Criolla", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 5500 } } },
-        { "name": "Salchicha Fresca", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 8000 } } },
-        { "name": "Morcilla Vasca", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 9900 } } }
+        { "name": "Chorizo Puro Cerdo", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 6500 }, "unidad": { "precioPorKg": 6500, "pesoAproxKg": 0.167 } } },
+        { "name": "Chorizo Puro Cerdo Premium", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 10500 }, "unidad": { "precioPorKg": 10500, "pesoAproxKg": 0.167 } } },
+        { "name": "Chorizo Puro Cerdo c/ Morrón", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 10500 }, "unidad": { "precioPorKg": 10500, "pesoAproxKg": 0.167 } } },
+        { "name": "Morcilla Tipo Criolla", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 5500 }, "unidad": { "precioPorKg": 5500, "pesoAproxKg": 0.167 } } },
+        { "name": "Salchicha Fresca", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 8000 }, "unidad": { "precioPorKg": 8000, "pesoAproxKg": 0.083 } } },
+        { "name": "Morcilla Vasca", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 9900 }, "unidad": { "precioPorKg": 9900, "pesoAproxKg": 0.167 } } }
       ]
     },
     "achuras": {
       "label": "Achuras",
       "items": [
-        { "name": "Molleja", "cut": "Achuras", "min": "", "venta": { "kilo": { "precioPorKg": 27000 } }, "indiceAsado": 0.4 },
+        { "name": "Molleja", "cut": "Achuras", "min": "", "venta": { "kilo": { "precioPorKg": 27000 } }, "indiceAsado": 0.25 },
         { "name": "Chinchulín", "cut": "Achuras", "min": "", "venta": { "kilo": { "precioPorKg": 5500 } }, "indiceAsado": 0.25 },
-        { "name": "Riñón", "cut": "Achuras", "min": "", "venta": { "kilo": { "precioPorKg": 5500 } } },
+        { "name": "Riñón", "cut": "Achuras", "min": "", "venta": { "kilo": { "precioPorKg": 5500 } }, "indiceAsado": 0.1 },
         { "name": "Mondongo", "cut": "Achuras", "min": "Pieza ~5 kg", "venta": { "unidad": { "precioPorKg": 9900, "pesoAproxKg": 5 } } },
         { "name": "Hígado", "cut": "Achuras", "min": "Pieza ~3 kg", "venta": { "unidad": { "precioPorKg": 5000, "pesoAproxKg": 3 } } }
       ]

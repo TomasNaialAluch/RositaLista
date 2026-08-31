@@ -19,12 +19,13 @@ Un botón nuevo activa un "modo juego": en vez de navegar libremente sumando cor
 ## Cómo se entra al modo
 
 - El botón (ícono de parrilla con una llama abajo, ver `ICON` en `calcularAsado.js`) vive en `.catalog-toolbar`, a la derecha del toggle Grilla/Lista — mismo lugar donde ya estaban el botón de colapsar todo (izquierda) y el toggle de vista (centro). **Decisión tomada:** se dibujó un ícono de línea nuevo en vez de reusar uno de `icons.js`, porque ese archivo es específicamente para íconos de categoría — este botón sigue el mismo criterio que `ViewToggle`/`CollapseToggle`, que también dibujan su propio ícono inline.
-- Al tocarlo, se abre el modal "¿Cuántos son en el asado?" (stepper −/+, arranca en 4). Confirmar prende el modo.
+- Al tocarlo, se abre el modal "¿Cuántos son en el asado?" (stepper −/+, arranca en 8). Confirmar prende el modo.
 - **Tratamiento visual del "modo activo" (decisión tomada):** un `::after` fijo a la ventana (`position: fixed; inset: 0`, no a la página — así se ve igual sin importar el scroll) con un borde de 4px en el rosa oscuro de la marca, pulsando de opacidad 0.5 a 1 cada 1.8s. Se prende/apaga con la clase `ca-active` en `<body>`.
+- **Filtro "Cortes de asado"** (ver [rediseno-filtro-cortes-asado.md](rediseno-filtro-cortes-asado.md)): al mismo tiempo que se prende el modo, aparecen dos chips arriba de Vacuno ("🔥 Cortes de asado" / "Ver todos los cortes"). Con "Cortes de asado" activo (el default), Vacuno/Cerdo/Achuras dejan de mostrar todos sus productos y muestran solo los que se usan en un asado, reordenados de más a menos protagonista — Peceto, Nalga, Mondongo, etc. quedan afuera. Es un componente hermano (`AsadoFilter`), no algo que `CalcularAsado` controle directamente — `app.js` es quien lo monta/desmonta y aplica el filtro sobre el catálogo.
 
 ## Secuencia (qué va preguntando, en orden)
 
-1. **Al activar CalcularAsado** → modal: *"¿Cuántos son en el asado?"* — stepper +/−, arranca en 4 personas, botón "Empezar".
+1. **Al activar CalcularAsado** → modal: *"¿Cuántos son en el asado?"* — stepper +/−, arranca en 8 personas, botón "Empezar".
 2. **Confirmado el número de personas** → se decide el ticket (ver "Después del asado" abajo), aparece el contador de carne flotante, y el catálogo se reordena: **cerdo pasa a estar antes que pollo** (`CalcularAsado.reorderForAsado`, genérico — mueve "cerdo" justo antes de "pollo" sin tocar el resto del orden, así que si mañana se agregan más categorías siguen donde estaban).
 3. **Mientras el usuario va agregando cortes** (desde las cards/filas de siempre, sin ningún flujo especial) → el contador se actualiza en vivo vía `Cart.subscribe`, recalculando cuánto falta (ver fórmula abajo). **No hay "distribución/consejo" automático entre vacuno/cerdo/pollo** — se descartó esa parte de la idea original: el reordenamiento de categorías ya es la forma en que el modo "aconseja" (pone cerdo más arriba), pedirle además que sugiera cortes puntuales quedó fuera del alcance de esta v1.
 4. **Botón "Terminar pedido"** (en el contador flotante) → dispara la cadena de preguntas, una a la vez, **solo por lo que falte**:
@@ -32,7 +33,7 @@ Un botón nuevo activa un "modo juego": en vez de navegar libremente sumando cor
    - Si no hay **provoleta** → *"¿Querés agregar provoleta?"*
    - Si no hay **achuras** → *"¿Querés agregar achuras?"*
 
-   **Decisión tomada sobre el "Sí":** decir que sí NO corta el modo — cierra la pregunta, lleva al usuario a esa categoría (scroll + la despliega si estaba colapsada) y ahí se queda, todavía en modo Asado, para que lo que agregue caiga en el Ticket Asado. El usuario vuelve a tocar "Terminar pedido" cuando termine, y la cadena se re-evalúa desde cero — no repite lo que ya está resuelto. Decir que no pasa a la siguiente pregunta.
+   **Decisión tomada sobre el "Sí":** los tres tienen su propio flujo desde que se implementó la selección/agregado con cantidad por persona (ver [rediseno-embutidos-asado.md](rediseno-embutidos-asado.md)) — ninguno se queda con el comportamiento genérico original de "solo navegar a la categoría". Embutidos agrega automáticamente el default (chorizo) y pone la categoría en "modo selección" (cards con botón "Seleccionar" en vez de "Agregar") para el resto. Achuras hace lo mismo pero sin ningún default. Provoleta, al ser un solo producto, no necesita modo selección: agrega directo la cantidad sugerida (`Math.ceil(personas / 2)`, la misma que ya muestra el contador flotante) y navega a la categoría para que se pueda ajustar con el stepper de siempre. En los tres casos, el usuario vuelve a tocar "Terminar pedido" cuando termine, y la cadena se re-evalúa desde cero — no repite lo que ya está resuelto (y para embutidos/achuras, esa segunda pasada de "Terminar pedido" es también lo que apaga el modo selección de las cards). Decir que no pasa a la siguiente pregunta.
 5. **Sin nada pendiente** (se contestó que no a las tres, o nunca hizo falta preguntar) → se apaga el modo (borde + contador), se abre un ticket nuevo para lo que se compre después ("para la casa"), y se abre el modal del pedido (`Cart.openModal()`) para que el usuario complete nombre/dirección y mande el WhatsApp.
 
 ## Salir del modo antes de terminar
@@ -54,15 +55,18 @@ Si en ese momento el ticket seguía vacío (el usuario activó el modo pero no l
 
 ### Índice de consumo por persona — `indiceAsado` en `products.json`
 
-**Decisión tomada sobre el nombre y nivel del campo:** se llama `indiceAsado`, es un número, y va **por producto** (no por `cut` ni por categoría) — necesario porque Chinchulín y Molleja necesitan su propio valor distinto al resto de "Achuras". Se cargó en cada producto de `vacuno`/`pollo`/`cerdo` según su `cut` (magros y "Para milanesa"/"Picada" → 0.5; "Cortes con hueso" → 0.8), y puntualmente en Molleja (0.4), Chinchulín (0.25) y Provoleta (0.5). Embutidos y el resto de Achuras (Riñón, Mondongo, Hígado) **no tienen** `indiceAsado` — no hacía falta, ver "Agregados" abajo.
+**Decisión tomada sobre el nombre y nivel del campo:** se llama `indiceAsado`, es un número, y va **por producto** (no por `cut` ni por categoría) — necesario porque Chinchulín, Molleja y Riñón necesitan su propio valor distinto al resto de "Achuras". Se cargó en cada producto de `vacuno`/`pollo`/`cerdo` según su `cut` (magros y "Para milanesa"/"Picada" → 0.5; "Cortes con hueso" → 0.8), y puntualmente en Molleja, Chinchulín, Riñón y Provoleta. Embutidos y el resto de Achuras (Mondongo, Hígado) **no tienen** `indiceAsado` a propósito, ver "Agregados" abajo.
 
 | Tipo de corte | `indiceAsado` |
 |---|---|
 | Cortes magros / Para milanesa / Picada | 0.5 kg / persona |
 | Cortes con hueso (asado) | 0.8 kg / persona |
 | Chinchulín | 0.25 kg / persona |
-| Molleja | 0.4 kg / persona |
+| Molleja | 0.25 kg / persona |
+| Riñón | 0.1 kg / persona |
 | Provoleta | 0.5 unidades / persona (o sea, 1 cada 2) |
+
+**Molleja se corrigió de 0.4 a 0.25 kg/persona** (ver [rediseno-embutidos-asado.md](rediseno-embutidos-asado.md)): el valor original (0.4) venía de tratar a la Molleja como si reemplazara un corte de carne en el contador de "carne faltante", pero al reusar el mismo campo para calcular cuánto agregar al seleccionarla como achura (ver "Selección de embutidos/achuras" más abajo), esa cantidad resultaba demasiado alta para un acompañamiento — 3.2 kg para 8 personas, por ejemplo. Fuentes consultadas (asadores/notas de cocina argentina) recomiendan 250-350 g por persona por cada tipo de achura si se compra ese tipo puntual, y aclaran que ni siquiera todos los comensales comen achuras — 0.25 kg/persona (el piso de ese rango) quedó como valor único para las dos cosas.
 
 La unidad del índice (kg vs. unidades) no está declarada aparte en el JSON — se infiere en el código: para Provoleta se interpreta como "unidades por persona" (un caso especial por categoría, `catKey === "provoleta"`, ver `computeProgress` en `calcularAsado.js`); para todo lo demás es "kg por persona", usando `CartState.kgOf(entry)` para normalizar tanto líneas compradas "por kilo" como "por unidad" a kilos antes de dividir por el índice.
 
@@ -80,9 +84,9 @@ Por qué así: cada corte "rinde" distinto por persona (un chinchulín rinde má
 
 ### Agregados (no cuentan como carne)
 
-- **Provoleta**: contador aparte (`🧀 x/y provoletas` en el widget), sugerido `Math.ceil(personas / 2)`. No entra en el cálculo de `kgFaltan`.
-- **Embutidos**: no entran en el cálculo en vivo (no tienen `indiceAsado`) — solo se preguntan al final si el Ticket Asado no tiene ninguno. La tabla original tenía "1 unidad/persona" para embutidos, pero como se venden por kilo en `products.json` (no por unidad), no había una cantidad real con la que calcular ese índice — se optó por dejarlos fuera del contador en vez de forzar una conversión inventada.
-- **Achuras en general** (Riñón, Mondongo, Hígado): mismo criterio que embutidos, solo presencia al final. Molleja y Chinchulín son la excepción — sí tienen `indiceAsado` y sí cuentan en vivo, porque el pedido original los trató como "carne" — así que si ya se agregó Chinchulín durante el armado, la pregunta final de achuras se salta (ya hay algo de esa categoría).
+- **Provoleta**: contador aparte (`🧀 x/y provoletas` en el widget), sugerido `Math.ceil(personas / 2)`. No entra en el cálculo de `kgFaltan`. Decir que sí a la pregunta final la agrega directo (misma cuenta, `startProvoletaAdd` en `calcularAsado.js`) en vez de solo llevar a la categoría — ver [rediseno-embutidos-asado.md](rediseno-embutidos-asado.md).
+- **Embutidos**: no entran en el cálculo en vivo del contador de carne (siguen sin `indiceAsado` — no tendría sentido, no son "carne principal"). Desde [rediseno-embutidos-asado.md](rediseno-embutidos-asado.md), cada uno sí tiene un modo `venta.unidad` (con la conversión unidad↔kilo real de cada producto) para poder venderse "1 por persona" con un precio de referencia — decir que sí a la pregunta final agrega el chorizo default y pone la categoría en modo selección, en vez de solo preguntar presencia/ausencia como antes.
+- **Achuras**: Molleja y Chinchulín tienen `indiceAsado` y cuentan en vivo en el contador de carne, porque el pedido original los trató como "carne" — si ya se agregó alguno durante el armado, la pregunta final de achuras se salta (ya hay algo de esa categoría). Riñón se sumó a esa lista (`indiceAsado: 0.1`) al implementar el modo selección. Mondongo e Hígado siguen sin `indiceAsado` a propósito: se venden como pieza entera de peso fijo, no proporcional a `personas`, así que sumarlos a la fórmula de `kgDeLaLínea / indiceAsado` distorsionaría el cálculo (ver el detalle en rediseno-embutidos-asado.md). Decir que sí a la pregunta final de achuras ya no solo lleva a la categoría: la pone en modo selección (sin ningún default, a diferencia de embutidos).
 
 ## Integración con la Orbe
 

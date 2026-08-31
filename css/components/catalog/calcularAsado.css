@@ -166,6 +166,8 @@ body.ca-active::after {
   border-radius: 20px 20px 0 0;
   padding: 20px;
   box-sizing: border-box;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 @media (min-width: 640px) {

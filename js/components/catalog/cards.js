@@ -32,6 +32,41 @@ const Cards = (function () {
   const ORBE_TEXT_DETAIL =
     "Acá podés sumar el otro modo de compra o agregar otra preparación de este mismo producto — se puede mezclar todo lo que quieras.";
 
+  // Modo selección (usado por CalcularAsado para embutidos/achuras — ver
+  // docs/rediseno-embutidos-asado.md): mientras está activo para una
+  // categoría puntual, sus cards cambian el flujo normal de compra por un
+  // solo botón toggle "Seleccionar", con contorno destacado en la
+  // seleccionada. Cards no sabe nada de personas, índices ni kilos — eso lo
+  // decide el `controller` que activó el modo (isSelected/toggle).
+  let selection = null; // { catKey, controller: { isSelected(item), toggle(item) } }
+
+  function enterSelectionMode(catKey, controller) {
+    selection = { catKey, controller };
+  }
+
+  function clearSelectionMode() {
+    selection = null;
+  }
+
+  function renderSelectableAction(card, action, controller, item) {
+    function render() {
+      action.innerHTML = "";
+      const selected = controller.isSelected(item);
+      card.classList.toggle("rc-card--selected", selected);
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "rc-select-btn" + (selected ? " rc-select-btn--selected" : "");
+      btn.textContent = selected ? "✓ Seleccionado" : "Seleccionar";
+      btn.addEventListener("click", () => {
+        controller.toggle(item);
+        render();
+      });
+      action.appendChild(btn);
+    }
+    render();
+  }
+
   function pulse(card) {
     card.classList.add("rc-card--pulse");
     setTimeout(() => card.classList.remove("rc-card--pulse"), 220);
@@ -520,14 +555,35 @@ const Cards = (function () {
     action.className = "rc-action";
     card.appendChild(action);
 
+    if (selection && selection.catKey === catKey) {
+      renderSelectableAction(card, action, selection.controller, item);
+      return card;
+    }
+
     // Cantidad de cada combinación (modo, preparación) por separado: así
     // "Por Kilo" y "Ventana" del mismo producto pueden convivir, y dentro de
     // un mismo modo también pueden convivir varias preparaciones (ej: un
     // Peceto "Entera" y otro "Para milanesa"). La card solo muestra un
     // stepper grande a la vez (el de la combinación "principal"); el resto
     // se administra desde el modal de detalle.
+    //
+    // Se hidrata desde `handlers.getQty` (en vez de arrancar siempre en 0)
+    // para que la card muestre lo que ya hay en el carrito cuando algo lo
+    // agregó por fuera de sus propios botones +/− — ej: CalcularAsado
+    // sumando embutidos/achuras/provoleta directo por CartState al
+    // contestar la cadena final (ver docs/rediseno-embutidos-asado.md).
+    // Sin esto, un re-render del catálogo (cambiar de vista, entrar/salir
+    // del modo asado) hacía que la card "olvidara" visualmente esa cantidad
+    // aunque el carrito la tuviera bien.
     const state = {};
-    modes.forEach((m) => (state[m.key] = {}));
+    modes.forEach((m) => {
+      state[m.key] = {};
+      if (!handlers.getQty) return;
+      Preparation.getOptions(item).forEach((prep) => {
+        const qty = handlers.getQty(catKey, item, m.key, prep);
+        if (qty > 0) state[m.key][prep] = qty;
+      });
+    });
 
     // Si hay más de un modo, o el producto tiene opciones de preparación,
     // puede haber más de una combinación puesta a la vez — ahí es donde
@@ -663,5 +719,5 @@ const Cards = (function () {
     return section;
   }
 
-  return { money, createProductCard, createCategorySection };
+  return { money, createProductCard, createCategorySection, enterSelectionMode, clearSelectionMode };
 })();
