@@ -44,6 +44,7 @@ const Cart = (function () {
     renderMinWarningAndShipping();
     renderActiveTicketItems();
     renderTicketTotalRow();
+    renderShippingCost();
     renderGrandTotal();
     updateBarChip();
     updateWhatsAppLink();
@@ -221,6 +222,34 @@ const Cart = (function () {
     return `Envío (${shipping.choice}): ${cost > 0 ? money(cost) : "Gratis"}`;
   }
 
+  /**
+   * Línea "Envío: $X" en el modal — el único lugar donde se ve el costo de
+   * envío (la lista de barrios ya no lo muestra, ver `barrioOptions` en
+   * `buildDOM`). Solo aparece si falta el mínimo Y ya se eligió un barrio;
+   * antes de elegir, no hay nada que mostrar todavía.
+   */
+  function renderShippingCost() {
+    if (!CartState.isBelowMinimum()) {
+      els.cartShippingCost.classList.add("hidden");
+      return;
+    }
+    const shipping = CartState.getShipping();
+    if (!shipping.choice) {
+      els.cartShippingCost.classList.add("hidden");
+      return;
+    }
+    els.cartShippingCost.classList.remove("hidden");
+    if (shipping.choice === CartState.OTRO_BARRIO) {
+      els.cartShippingCostLabel.textContent = "Envío";
+      els.cartShippingCostAmount.textContent = "A coordinar";
+      return;
+    }
+    const barrio = (CartState.getConfig().barrios || []).find((b) => b.nombre === shipping.choice);
+    const cost = barrio ? barrio.costoEnvio : 0;
+    els.cartShippingCostLabel.textContent = `Envío (${shipping.choice})`;
+    els.cartShippingCostAmount.textContent = cost > 0 ? money(cost) : "Gratis";
+  }
+
   function updateWhatsAppLink() {
     const ticketOrder = CartState.getTicketOrder();
     const nonEmptyTickets = ticketOrder.filter((id) => CartState.getTicketEntries(id).length > 0);
@@ -307,11 +336,11 @@ const Cart = (function () {
       </div>
     `;
 
+    // El precio de envío de cada barrio NO se muestra acá (quedaba raro
+    // ver una lista de precios antes de elegir) — se muestra recién en
+    // "Ver pedido", una vez elegido el barrio, en #cartShippingCost.
     const barrioOptions = (CartState.getConfig().barrios || [])
-      .map(
-        (b) =>
-          `<option value="${b.nombre}">${b.nombre}${b.costoEnvio > 0 ? ` (+${money(b.costoEnvio)} de envío)` : " (envío gratis)"}</option>`
-      )
+      .map((b) => `<option value="${b.nombre}">${b.nombre}</option>`)
       .join("");
 
     const cartModal = document.createElement("div");
@@ -350,6 +379,11 @@ const Cart = (function () {
             <span>¿Cuál?</span>
             <input type="text" id="shippingOtroInput" class="cart-input" placeholder="Tu barrio">
           </label>
+        </div>
+
+        <div id="cartShippingCost" class="cart-total-row hidden">
+          <span id="cartShippingCostLabel">Envío</span>
+          <strong id="cartShippingCostAmount">$0</strong>
         </div>
 
         <div class="cart-grand-total-row">
@@ -400,6 +434,9 @@ const Cart = (function () {
       shippingBarrio: cartModal.querySelector("#shippingBarrio"),
       shippingOtroField: cartModal.querySelector("#shippingOtroField"),
       shippingOtroInput: cartModal.querySelector("#shippingOtroInput"),
+      cartShippingCost: cartModal.querySelector("#cartShippingCost"),
+      cartShippingCostLabel: cartModal.querySelector("#cartShippingCostLabel"),
+      cartShippingCostAmount: cartModal.querySelector("#cartShippingCostAmount"),
       cartGrandTotal: cartModal.querySelector("#cartGrandTotal"),
       whatsappBtn: cartModal.querySelector("#whatsappBtn"),
       nameField: cartModal.querySelector("#nameField"),
@@ -439,6 +476,7 @@ const Cart = (function () {
       CartState.setShippingChoice(els.shippingBarrio.value);
       els.shippingOtroField.classList.toggle("hidden", els.shippingBarrio.value !== CartState.OTRO_BARRIO);
       els.shippingBarrio.classList.remove("cart-input--error");
+      renderShippingCost();
       renderGrandTotal();
       updateWhatsAppLink();
     });

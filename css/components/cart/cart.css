@@ -509,6 +509,15 @@
   color: var(--text-muted);
 }
 
+/* .hidden (display:none) está declarada antes en este mismo archivo con la
+   misma especificidad que .cart-field (display:flex) — sin este empate a
+   favor, el que aparece último en el archivo gana, y .cart-field ganaba
+   dejando visible #shippingOtroField aunque tuviera la clase "hidden"
+   puesta. Bug preexistente, encontrado al agregar la línea de envío. */
+.cart-field.hidden {
+  display: none;
+}
+
 .cart-input {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 0.92rem;
