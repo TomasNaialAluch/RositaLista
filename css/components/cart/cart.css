@@ -54,10 +54,6 @@
   z-index: 50;
 }
 
-.cart-modal.hidden {
-  display: none;
-}
-
 .cart-modal-content {
   background: #fff;
   width: 100%;
@@ -161,8 +157,16 @@
   padding: 0;
 }
 
+/* Utilitaria: "esto se oculta, sin excepciones" — con !important a
+   propósito, porque varias clases de este mismo archivo (.cart-modal,
+   .cart-total-row, .cart-shipping, .cart-tickets-list, .cart-field,
+   .cart-split-new-row en splitModal.js) declaran su propio `display` y
+   están escritas después de esta regla: sin !important, esas ganaban por
+   orden en el cascade y dejaban el elemento visible aunque tuviera la
+   clase "hidden" puesta (bug real encontrado: la línea de envío y el
+   subtotal por ticket quedaban visibles con "$0"). */
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 /* ---- Tickets ("Mis pedidos") ---- */
@@ -486,10 +490,26 @@
   color: var(--rosita-pink-dark);
 }
 
+/* Mismo lenguaje visual que .cart-min-warning (caja con fondo rosa claro) —
+   a propósito, para que se lea como algo que hay que notar, no como un
+   texto legal chiquito que se salta. Es importante que quede claro que
+   "Total a pagar" es aproximado, no un monto cerrado. */
 .cart-disclaimer {
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  margin: 4px 0 16px;
+  color: var(--rosita-pink-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--rosita-pink-light);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 0 0 16px;
+}
+
+.cart-total-approx {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--rosita-pink);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .cart-customer-fields {
@@ -507,15 +527,6 @@
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-muted);
-}
-
-/* .hidden (display:none) está declarada antes en este mismo archivo con la
-   misma especificidad que .cart-field (display:flex) — sin este empate a
-   favor, el que aparece último en el archivo gana, y .cart-field ganaba
-   dejando visible #shippingOtroField aunque tuviera la clase "hidden"
-   puesta. Bug preexistente, encontrado al agregar la línea de envío. */
-.cart-field.hidden {
-  display: none;
 }
 
 .cart-input {

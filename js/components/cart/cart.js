@@ -387,11 +387,11 @@ const Cart = (function () {
         </div>
 
         <div class="cart-grand-total-row">
-          <span>Total a pagar</span>
+          <span>Total a pagar <small class="cart-total-approx">(aprox.)</small></span>
           <strong id="cartGrandTotal">$0</strong>
         </div>
 
-        <p class="cart-disclaimer">* Precios y pesos aproximados. El total final puede variar según el peso real de cada pieza.</p>
+        <p class="cart-disclaimer">ℹ️ Este total es <strong>aproximado</strong> — los precios y pesos pueden variar según el peso real de cada pieza.</p>
         <div class="cart-customer-fields">
           <label class="cart-field" id="nameField">
             <span>Nombre y apellido *</span>
