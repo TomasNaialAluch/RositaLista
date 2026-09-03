@@ -19,7 +19,7 @@
         { "name": "Bife Angosto", "cut": "Cortes magros", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 24000 } }, "opcionesPreparacion": ["En churrascos"], "indiceAsado": 0.5 },
         { "name": "Bife Ancho", "cut": "Cortes magros", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 20000 }, "unidad": { "precioPorKg": 20000, "pesoAproxKg": 3 } }, "opcionesPreparacion": ["En churrascos"], "indiceAsado": 0.5 },
         { "name": "Picaña", "cut": "Cortes magros", "min": "Pieza ~1.5 kg", "venta": { "unidad": { "precioPorKg": 19000, "pesoAproxKg": 1.5 } }, "indiceAsado": 0.5 },
-        { "name": "Picada Especial", "cut": "Picada", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 8900 } }, "indiceAsado": 0.5 },
+        { "name": "Picada Especial", "cut": "Picada", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 10500 } }, "indiceAsado": 0.5 },
         { "name": "Palomita", "cut": "Cortes magros", "min": "Pieza ~1.2 kg", "venta": { "unidad": { "precioPorKg": 16000, "pesoAproxKg": 1.2 } }, "indiceAsado": 0.5 },
         { "name": "Tortuguita", "cut": "Cortes magros", "min": "Pieza ~1.5 kg", "venta": { "unidad": { "precioPorKg": 16000, "pesoAproxKg": 1.5 } }, "indiceAsado": 0.5 },
         { "name": "Matambre", "cut": "Cortes magros", "min": "Pieza ~2.5 kg", "venta": { "unidad": { "precioPorKg": 13900, "pesoAproxKg": 2.5 } }, "indiceAsado": 0.5 }
