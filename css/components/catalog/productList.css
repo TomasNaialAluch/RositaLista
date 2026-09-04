@@ -22,6 +22,32 @@
   box-shadow: 0 0 0 2px rgba(193, 79, 107, 0.55), 0 2px 10px rgba(161, 61, 87, 0.08);
 }
 
+/* Entrada/salida individual de una fila al filtrar con la barra de búsqueda
+   (ver mismo comentario en cards.css / diffItems en app.js). */
+@keyframes rl-row-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+
+.rl-row--entering {
+  animation: rl-row-in 0.22s ease;
+}
+
+@keyframes rl-row-out {
+  to { opacity: 0; transform: scale(0.96); }
+}
+
+.rl-row--exiting {
+  animation: rl-row-out 0.18s ease forwards;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rl-row--entering,
+  .rl-row--exiting {
+    animation: none !important;
+  }
+}
+
 .rl-row--tappable {
   cursor: pointer;
 }

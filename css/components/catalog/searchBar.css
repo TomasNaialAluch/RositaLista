@@ -1,0 +1,141 @@
+/* Fila fija entre .catalog-toolbar y #catalog (ver app.js) — a diferencia de
+   .asado-filter, esta SIEMPRE está montada, no depende de ningún modo. */
+.search-bar {
+  max-width: 780px;
+  margin: 0 auto 16px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  opacity: 0;
+  transform: translateY(-6px);
+  animation: search-bar-in 0.35s ease-out 0.1s forwards;
+}
+
+@keyframes search-bar-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.search-bar-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-bar-icon {
+  position: absolute;
+  left: 14px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+  display: flex;
+}
+
+.search-bar-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.search-bar-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--border);
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 10px 40px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.85rem;
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-bar-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-bar-input:focus {
+  border-color: var(--rosita-pink);
+  box-shadow: 0 0 0 3px rgba(193, 79, 107, 0.15);
+  outline: none;
+}
+
+.search-bar-clear {
+  position: absolute;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease;
+  pointer-events: none;
+}
+
+.search-bar-clear:hover {
+  background: var(--rosita-pink-light);
+}
+
+.search-bar-clear--visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* Estado "no encontramos productos" — reemplaza las secciones dentro de
+   #catalog cuando ninguna categoría tiene resultados (ver updateCatalogForSearch en app.js). */
+.search-empty {
+  opacity: 0;
+  animation: search-bar-in 0.25s ease-out forwards;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 16px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.search-empty p {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+}
+
+.search-empty strong {
+  color: var(--text);
+}
+
+.search-empty-clear {
+  border: 1.5px solid var(--rosita-pink);
+  background: #ffffff;
+  color: var(--rosita-pink-dark);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 9px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.search-empty-clear:hover {
+  background: var(--rosita-pink-light);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-bar,
+  .search-empty {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+
+  .search-bar-input,
+  .search-bar-clear {
+    transition: none !important;
+  }
+}

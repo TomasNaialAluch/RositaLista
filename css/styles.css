@@ -148,6 +148,33 @@ main {
   min-height: 0;
 }
 
+/* Una categoría entera aparece/desaparece cuando la búsqueda hace que pase
+   de/a 0 resultados (ver updateCatalogForSearch en app.js) — no se agrega
+   colapsada, se saca del todo del DOM. */
+@keyframes category-section-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+.category-section--entering {
+  animation: category-section-in 0.25s ease;
+}
+
+@keyframes category-section-out {
+  to { opacity: 0; transform: translateY(-4px); }
+}
+
+.category-section--exiting {
+  animation: category-section-out 0.18s ease forwards;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-section--entering,
+  .category-section--exiting {
+    animation: none !important;
+  }
+}
+
 .category-icon {
   display: inline-flex;
   width: 24px;

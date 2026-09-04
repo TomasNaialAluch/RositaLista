@@ -367,6 +367,9 @@ const ProductList = (function () {
   function createProductRow(catKey, item, handlers) {
     const row = document.createElement("div");
     row.className = "rl-row";
+    // Ver mismo comentario en cards.js: clave para el diff de la barra de
+    // búsqueda (app.js).
+    row.dataset.itemName = item.name;
 
     const info = document.createElement("div");
     info.className = "rl-info";

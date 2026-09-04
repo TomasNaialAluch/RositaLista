@@ -511,6 +511,10 @@ const Cards = (function () {
   function createProductCard(catKey, item, handlers) {
     const card = document.createElement("div");
     card.className = "rc-card";
+    // Clave para el diff de la barra de búsqueda (ver updateCatalogForSearch
+    // en app.js): permite encontrar/insertar esta card sin recrear las que
+    // ya estaban, así conservan su estado interno (cantidad, modo elegido).
+    card.dataset.itemName = item.name;
 
     const name = document.createElement("p");
     name.className = "rc-name";
