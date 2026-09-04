@@ -204,6 +204,11 @@ const CartState = (function () {
     return getGrandSubtotal() + getShippingCost();
   }
 
+  /** Precio por kilo real de una línea, sea "kilo" o "unidad" — ver mergeKgIntoTicket/applySplit, mismo cálculo. */
+  function precioPorKgOf(entry) {
+    return entry.unitLabel === "kg" ? entry.unitPrice : entry.product.venta[entry.mode].precioPorKg;
+  }
+
   /** "3 kg" o "2 unidades" según el modo de venta de la línea. */
   function qtyLabel(entry) {
     if (entry.unitLabel === "kg") return `${entry.qty} kg`;
@@ -269,5 +274,6 @@ const CartState = (function () {
     getShippingCost,
     qtyLabel,
     lineName,
+    precioPorKgOf,
   };
 })();

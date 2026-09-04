@@ -257,7 +257,7 @@ const Cart = (function () {
 
     const sections = nonEmptyTickets.map((id) => {
       const lines = CartState.getTicketEntries(id).map(
-        (e) => `• ${CartState.lineName(e)} — ${CartState.qtyLabel(e)} (${money(e.qty * e.unitPrice)})`
+        (e) => `• ${CartState.lineName(e)} — ${CartState.qtyLabel(e)} (${money(CartState.precioPorKgOf(e))}/kg)`
       );
       return multiTicket ? [`📦 ${CartState.getTicket(id).name}`, ...lines].join("\n") : lines.join("\n");
     });
@@ -270,8 +270,6 @@ const Cart = (function () {
     const parts = ["¡Hola Rosita! 👋 Quiero hacer este pedido:", "", sections.join("\n\n")];
     if (shippingLine) parts.push("", shippingLine);
     parts.push(
-      "",
-      `Total a pagar: ${money(CartState.getGrandTotal())}`,
       "",
       `Nombre: ${name || "-"}`,
       `Dirección: ${address || "-"}${bell ? ` (Timbre: ${bell})` : ""}`
