@@ -5,6 +5,7 @@
     { "nombre": "Savedra", "costoEnvio": 3000 },
     { "nombre": "Nuñez", "costoEnvio": 5000 },
     { "nombre": "Belgrano", "costoEnvio": 8000 },
+    { "nombre": "Cañitas", "costoEnvio": 8000 },
     { "nombre": "Palermo", "costoEnvio": 8000 }
   ],
   "quienesSomos": {
