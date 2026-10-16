@@ -49,8 +49,8 @@
       "label": "Embutidos",
       "items": [
         { "name": "Chorizo Puro Cerdo", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 6500 }, "unidad": { "precioPorKg": 6500, "pesoAproxKg": 0.167 } } },
-        { "name": "Chorizo Puro Cerdo Premium", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 10500 }, "unidad": { "precioPorKg": 10500, "pesoAproxKg": 0.167 } } },
-        { "name": "Chorizo Puro Cerdo c/ Morrón", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 10500 }, "unidad": { "precioPorKg": 10500, "pesoAproxKg": 0.167 } } },
+        { "name": "Chorizo Puro Cerdo Premium", "cut": "Embutidos", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 10500, "minKg": 1 }, "unidad": { "precioPorKg": 10500, "pesoAproxKg": 0.167 } } },
+        { "name": "Chorizo Puro Cerdo c/ Morrón", "cut": "Embutidos", "min": "1 kg", "venta": { "kilo": { "precioPorKg": 10500, "minKg": 1 }, "unidad": { "precioPorKg": 10500, "pesoAproxKg": 0.167 } } },
         { "name": "Morcilla Tipo Criolla", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 5500 }, "unidad": { "precioPorKg": 5500, "pesoAproxKg": 0.167 } } },
         { "name": "Salchicha Fresca", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 8000 }, "unidad": { "precioPorKg": 8000, "pesoAproxKg": 0.083 } } },
         { "name": "Morcilla Vasca", "cut": "Embutidos", "min": "", "venta": { "kilo": { "precioPorKg": 11000 }, "unidad": { "precioPorKg": 9900, "pesoAproxKg": 0.167 } } }
