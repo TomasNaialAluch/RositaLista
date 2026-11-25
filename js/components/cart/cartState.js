@@ -193,18 +193,25 @@ const CartState = (function () {
   }
 
   /**
-   * Costo de envío según el barrio elegido — 0 si no aplica (llega al mínimo)
-   * o si es "Otro" (se coordina). Es escalonado: a 0 kg se paga el costo
-   * completo del barrio, y baja linealmente a medida que el pedido se
-   * acerca a `ventaMinimaKg` (a partir de ahí es gratis). Así un pedido de
-   * 12kg con mínimo 15kg paga mucho menos envío que uno de 1kg.
+   * Costo de envío según el barrio elegido — 0 si no aplica (llega al
+   * mínimo) o si es "Otro" (se coordina). Sigue variando por barrio (el
+   * costo base de cada uno en `data/config.json`, según la distancia), pero
+   * además desalienta los pedidos chicos: para pedidos bajos se cobra casi
+   * el costo completo del barrio, y recién baja fuerte cerca del mínimo
+   * (`ventaMinimaKg`), donde pasa a ser gratis. La curva es cuadrática
+   * (exponente 2) a propósito, no lineal: un pedido de 3kg todavía paga
+   * ~91% del envío completo, uno de 7.5kg paga ~75%, y recién a partir de
+   * ~12-13kg se nota una baja fuerte. Así un pedido de Belgrano siempre sale
+   * más caro que uno de Mataderos, pero ningún pedido chico se "escapa"
+   * pagando casi nada de envío.
    */
   function getShippingCost() {
     if (!isBelowMinimum()) return 0;
     if (!shipping.choice || shipping.choice === OTRO_BARRIO) return 0;
     const barrio = (CONFIG.barrios || []).find((b) => b.nombre === shipping.choice);
     if (!barrio) return 0;
-    const factor = Math.max(0, 1 - getTotalKg() / CONFIG.ventaMinimaKg);
+    const avance = getTotalKg() / CONFIG.ventaMinimaKg; // 0 (nada pedido) a 1 (llega al mínimo)
+    const factor = Math.max(0, 1 - Math.pow(avance, 2));
     return Math.round((barrio.costoEnvio * factor) / 100) * 100;
   }
 
