@@ -560,6 +560,69 @@
   display: block;
 }
 
+.cart-barrio-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.cart-barrio-btn:focus {
+  border-color: var(--rosita-pink);
+}
+
+.barrio-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.barrio-search-input {
+  width: 100%;
+}
+
+.barrio-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.barrio-option {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.92rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.barrio-option:hover {
+  background: var(--bg-soft, #f5f1ef);
+}
+
+.barrio-option--selected {
+  background: var(--rosita-pink);
+  color: #fff;
+  font-weight: 600;
+}
+
+.barrio-empty {
+  padding: 12px 14px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
 .cart-btn-whatsapp {
   display: flex;
   align-items: center;

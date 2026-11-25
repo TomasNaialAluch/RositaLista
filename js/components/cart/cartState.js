@@ -192,12 +192,20 @@ const CartState = (function () {
     return getAllEntries().length > 0 && getTotalKg() < CONFIG.ventaMinimaKg;
   }
 
-  /** Costo de envío según el barrio elegido — 0 si no aplica (llega al mínimo) o si es "Otro" (se coordina). */
+  /**
+   * Costo de envío según el barrio elegido — 0 si no aplica (llega al mínimo)
+   * o si es "Otro" (se coordina). Es escalonado: a 0 kg se paga el costo
+   * completo del barrio, y baja linealmente a medida que el pedido se
+   * acerca a `ventaMinimaKg` (a partir de ahí es gratis). Así un pedido de
+   * 12kg con mínimo 15kg paga mucho menos envío que uno de 1kg.
+   */
   function getShippingCost() {
     if (!isBelowMinimum()) return 0;
     if (!shipping.choice || shipping.choice === OTRO_BARRIO) return 0;
     const barrio = (CONFIG.barrios || []).find((b) => b.nombre === shipping.choice);
-    return barrio ? barrio.costoEnvio : 0;
+    if (!barrio) return 0;
+    const factor = Math.max(0, 1 - getTotalKg() / CONFIG.ventaMinimaKg);
+    return Math.round((barrio.costoEnvio * factor) / 100) * 100;
   }
 
   function getGrandTotal() {

@@ -217,15 +217,13 @@ const Cart = (function () {
     if (shipping.choice === CartState.OTRO_BARRIO) {
       return `Envío: a coordinar (barrio: ${shipping.otro.trim() || "no especificado"})`;
     }
-    const barrio = (CartState.getConfig().barrios || []).find((b) => b.nombre === shipping.choice);
-    const cost = barrio ? barrio.costoEnvio : 0;
+    const cost = CartState.getShippingCost();
     return `Envío (${shipping.choice}): ${cost > 0 ? money(cost) : "Gratis"}`;
   }
 
   /**
    * Línea "Envío: $X" en el modal — el único lugar donde se ve el costo de
-   * envío (la lista de barrios ya no lo muestra, ver `barrioOptions` en
-   * `buildDOM`). Solo aparece si falta el mínimo Y ya se eligió un barrio;
+   * envío (el modal de barrios ya no lo muestra). Solo aparece si falta el mínimo Y ya se eligió un barrio;
    * antes de elegir, no hay nada que mostrar todavía.
    */
   function renderShippingCost() {
@@ -244,8 +242,7 @@ const Cart = (function () {
       els.cartShippingCostAmount.textContent = "A coordinar";
       return;
     }
-    const barrio = (CartState.getConfig().barrios || []).find((b) => b.nombre === shipping.choice);
-    const cost = barrio ? barrio.costoEnvio : 0;
+    const cost = CartState.getShippingCost();
     els.cartShippingCostLabel.textContent = `Envío (${shipping.choice})`;
     els.cartShippingCostAmount.textContent = cost > 0 ? money(cost) : "Gratis";
   }
@@ -305,8 +302,8 @@ const Cart = (function () {
     const shipping = CartState.getShipping();
 
     if (!shipping.choice) {
-      els.shippingBarrio.classList.add("cart-input--error");
-      els.shippingBarrio.focus();
+      els.shippingBarrioBtn.classList.add("cart-input--error");
+      els.shippingBarrioBtn.focus();
       return false;
     }
     if (shipping.choice === CartState.OTRO_BARRIO && !shipping.otro.trim()) {
@@ -337,10 +334,6 @@ const Cart = (function () {
     // El precio de envío de cada barrio NO se muestra acá (quedaba raro
     // ver una lista de precios antes de elegir) — se muestra recién en
     // "Ver pedido", una vez elegido el barrio, en #cartShippingCost.
-    const barrioOptions = (CartState.getConfig().barrios || [])
-      .map((b) => `<option value="${b.nombre}">${b.nombre}</option>`)
-      .join("");
-
     const cartModal = document.createElement("div");
     cartModal.id = "cartModal";
     cartModal.className = "cart-modal hidden";
@@ -367,11 +360,9 @@ const Cart = (function () {
         <div id="cartShipping" class="cart-shipping hidden">
           <label class="cart-field">
             <span>¿De qué barrio sos?</span>
-            <select id="shippingBarrio" class="cart-input">
-              <option value="">Elegí un barrio…</option>
-              ${barrioOptions}
-              <option value="${CartState.OTRO_BARRIO}">Otro</option>
-            </select>
+            <button type="button" id="shippingBarrioBtn" class="cart-input cart-barrio-btn">
+              <span id="shippingBarrioLabel">Elegí un barrio…</span>
+            </button>
           </label>
           <label class="cart-field hidden" id="shippingOtroField">
             <span>¿Cuál?</span>
@@ -413,12 +404,29 @@ const Cart = (function () {
       </div>
     `;
 
+    const barrioModal = document.createElement("div");
+    barrioModal.id = "barrioModal";
+    barrioModal.className = "cart-modal barrio-modal hidden";
+    barrioModal.innerHTML = `
+      <div class="cart-modal-content barrio-modal-content">
+        <div class="cart-modal-handle" aria-hidden="true"></div>
+        <button id="closeBarrioModal" class="cart-close-btn" aria-label="Cerrar">&times;</button>
+        <h2>¿De qué barrio sos?</h2>
+        <input type="text" id="barrioSearchInput" class="cart-input barrio-search-input" placeholder="Buscar barrio…" autocomplete="off">
+        <ul id="barrioList" class="barrio-list"></ul>
+      </div>
+    `;
+
     document.body.appendChild(cartBar);
     document.body.appendChild(cartModal);
+    document.body.appendChild(barrioModal);
 
     els = {
       cartBar,
       cartModal,
+      barrioModal,
+      barrioSearchInput: barrioModal.querySelector("#barrioSearchInput"),
+      barrioList: barrioModal.querySelector("#barrioList"),
       cartCount: cartBar.querySelector("#cartCount"),
       cartTotal: cartBar.querySelector("#cartTotal"),
       cartTicketsList: cartModal.querySelector("#cartTicketsList"),
@@ -429,7 +437,8 @@ const Cart = (function () {
       cartTicketTotalLabel: cartModal.querySelector("#cartTicketTotalLabel"),
       modalTotal: cartModal.querySelector("#modalTotal"),
       cartShipping: cartModal.querySelector("#cartShipping"),
-      shippingBarrio: cartModal.querySelector("#shippingBarrio"),
+      shippingBarrioBtn: cartModal.querySelector("#shippingBarrioBtn"),
+      shippingBarrioLabel: cartModal.querySelector("#shippingBarrioLabel"),
       shippingOtroField: cartModal.querySelector("#shippingOtroField"),
       shippingOtroInput: cartModal.querySelector("#shippingOtroInput"),
       cartShippingCost: cartModal.querySelector("#cartShippingCost"),
@@ -470,13 +479,72 @@ const Cart = (function () {
       updateUI();
     });
 
-    els.shippingBarrio.addEventListener("change", () => {
-      CartState.setShippingChoice(els.shippingBarrio.value);
-      els.shippingOtroField.classList.toggle("hidden", els.shippingBarrio.value !== CartState.OTRO_BARRIO);
-      els.shippingBarrio.classList.remove("cart-input--error");
+    const barriosDisponibles = CartState.getConfig().barrios || [];
+
+    function renderBarrioList(filter = "") {
+      const term = filter.trim().toLowerCase();
+      const shipping = CartState.getShipping();
+      const items = barriosDisponibles.filter((b) => b.nombre.toLowerCase().includes(term));
+      const otroMatches = "otro".includes(term);
+
+      const itemsHtml = items
+        .map(
+          (b) => `
+            <li>
+              <button type="button" class="barrio-option${shipping.choice === b.nombre ? " barrio-option--selected" : ""}" data-value="${b.nombre}">
+                ${b.nombre}
+              </button>
+            </li>`
+        )
+        .join("");
+
+      const otroHtml = otroMatches
+        ? `
+          <li>
+            <button type="button" class="barrio-option${shipping.choice === CartState.OTRO_BARRIO ? " barrio-option--selected" : ""}" data-value="${CartState.OTRO_BARRIO}">
+              Otro
+            </button>
+          </li>`
+        : "";
+
+      els.barrioList.innerHTML = itemsHtml + otroHtml;
+
+      if (!items.length && !otroMatches) {
+        els.barrioList.innerHTML = `<li class="barrio-empty">No encontramos ese barrio</li>`;
+      }
+    }
+
+    function selectBarrio(value) {
+      CartState.setShippingChoice(value);
+      els.shippingBarrioLabel.textContent = value === CartState.OTRO_BARRIO ? "Otro" : value;
+      els.shippingOtroField.classList.toggle("hidden", value !== CartState.OTRO_BARRIO);
+      els.shippingBarrioBtn.classList.remove("cart-input--error");
       renderShippingCost();
       renderGrandTotal();
       updateWhatsAppLink();
+      closeBarrioModal();
+      if (value === CartState.OTRO_BARRIO) els.shippingOtroInput.focus();
+    }
+
+    function openBarrioModal() {
+      els.barrioSearchInput.value = "";
+      renderBarrioList();
+      els.barrioModal.classList.remove("hidden");
+      els.barrioSearchInput.focus();
+    }
+    function closeBarrioModal() {
+      els.barrioModal.classList.add("hidden");
+    }
+
+    els.shippingBarrioBtn.addEventListener("click", openBarrioModal);
+    els.barrioModal.querySelector("#closeBarrioModal").addEventListener("click", closeBarrioModal);
+    els.barrioModal.addEventListener("click", (e) => {
+      if (e.target === els.barrioModal) closeBarrioModal();
+    });
+    els.barrioSearchInput.addEventListener("input", () => renderBarrioList(els.barrioSearchInput.value));
+    els.barrioList.addEventListener("click", (e) => {
+      const btn = e.target.closest(".barrio-option");
+      if (btn) selectBarrio(btn.dataset.value);
     });
     els.shippingOtroInput.addEventListener("input", () => {
       CartState.setShippingOtro(els.shippingOtroInput.value);

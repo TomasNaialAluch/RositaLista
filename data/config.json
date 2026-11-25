@@ -1,7 +1,13 @@
 {
   "whatsappNumber": "5491166246009",
-  "ventaMinimaKg": 8,
+  "ventaMinimaKg": 15,
   "barrios": [
+    { "nombre": "Mataderos", "costoEnvio": 2000 },
+    { "nombre": "Liniers", "costoEnvio": 2000 },
+    { "nombre": "Villa Luro", "costoEnvio": 2500 },
+    { "nombre": "Parque Avellaneda", "costoEnvio": 4000 },
+    { "nombre": "Villa Lugano", "costoEnvio": 4000 },
+    { "nombre": "Villa Soldati", "costoEnvio": 3000 },
     { "nombre": "Savedra", "costoEnvio": 3000 },
     { "nombre": "Nuñez", "costoEnvio": 5000 },
     { "nombre": "Belgrano", "costoEnvio": 8000 },
